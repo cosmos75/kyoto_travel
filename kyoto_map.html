@@ -631,11 +631,12 @@ function flyTo(x,y,w,done){
 }
 wrap.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
 const ptrs=new Map();let last=null,moved=0,pinch0=null;
-wrap.addEventListener('pointerdown',e=>{if(e.target.closest('#card,#zoomBox'))return;wrap.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;
+wrap.addEventListener('pointerdown',e=>{if(e.target.closest('#card,#zoomBox'))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;
   if(ptrs.size===1){last={x:e.clientX,y:e.clientY};wrap.classList.add('drag')}
   if(ptrs.size===2){const[p,q]=[...ptrs.values()];pinch0={d:Math.hypot(p.x-q.x,p.y-q.y),w:vb.w}}});
 wrap.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(ptrs.size===2&&pinch0){const[p,q]=[...ptrs.values()];const d=Math.hypot(p.x-q.x,p.y-q.y);zoomAt((pinch0.w*pinch0.d/d)/vb.w,(p.x+q.x)/2,(p.y+q.y)/2);moved+=10;return}
+  if(moved>6&&!wrap.hasPointerCapture(e.pointerId))wrap.setPointerCapture(e.pointerId);
   if(ptrs.size===1&&last){const a=toSvg(last.x,last.y),b=toSvg(e.clientX,e.clientY);vb.x-=b.x-a.x;vb.y-=b.y-a.y;moved+=Math.abs(e.clientX-last.x)+Math.abs(e.clientY-last.y);last={x:e.clientX,y:e.clientY};clamp();apply()}});
 function up(e){ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null;if(ptrs.size===1){const v=[...ptrs.values()][0];last={x:v.x,y:v.y}}if(!ptrs.size){last=null;wrap.classList.remove('drag')}}
 wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',up);
