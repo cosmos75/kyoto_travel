@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>京都名所遊覧圖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Noto+Serif+SC:wght@500;700&display=swap">
+<style>
+/* ============ 昭和复古配色 ============ */
+:root{
+  --paper:#efe3c4; --paper2:#f6ecd2; --ink:#3a2a1c; --ink2:#6b5238; --mute:#8b7456;
+  --red:#c2412b; --red2:#9e2e1d; --gold:#c7983f; --water:#83b3c0; --water2:#4d7f8f;
+  --green:#97a978; --green2:#6f8a5d; --shadow:rgba(58,42,28,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#2a2119;color:var(--ink);
+  font-family:"Shippori Mincho","Noto Serif SC","Songti SC","STSong","Hiragino Mincho ProN","Yu Mincho",serif;}
+button{font:inherit;cursor:pointer}
+
+#stage{position:fixed;inset:0;display:flex}
+#mapWrap{position:relative;flex:1;overflow:hidden;background:
+  radial-gradient(ellipse at center,#3a2e22 0%,#1f1812 100%);touch-action:none;cursor:grab}
+#mapWrap.drag{cursor:grabbing}
+#map{width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none}
+
+/* ============ 侧栏（像折页导览册） ============ */
+#side{width:300px;flex:none;background:var(--paper2);border-right:3px double var(--ink2);
+  display:flex;flex-direction:column;position:relative;z-index:4;box-shadow:4px 0 18px rgba(0,0,0,.35);
+  background-image:repeating-linear-gradient(0deg,rgba(120,90,50,.035) 0 1px,transparent 1px 3px)}
+#sideHead{padding:22px 20px 14px;border-bottom:2px solid var(--ink2);text-align:center;position:relative}
+#sideHead .kicker{font-size:11px;letter-spacing:.5em;color:var(--red);font-weight:700}
+#sideHead h1{margin:6px 0 2px;font-size:30px;letter-spacing:.18em;font-weight:800;line-height:1.15}
+#sideHead .sub{font-size:12px;color:var(--ink2);letter-spacing:.2em}
+#sideHead .stamp{position:absolute;right:14px;top:14px;width:42px;height:42px;border:2px solid var(--red);
+  color:var(--red);border-radius:6px;font-size:12px;line-height:1.05;display:grid;place-items:center;
+  transform:rotate(8deg);font-weight:800;opacity:.85;letter-spacing:.05em;padding-top:2px}
+#sideBody{flex:1;overflow:auto;padding:14px 16px 10px}
+.secT{display:flex;align-items:center;gap:8px;font-size:13px;letter-spacing:.3em;color:var(--ink2);margin:6px 0 10px;font-weight:700}
+.secT::before,.secT::after{content:"";flex:1;height:1px;background:var(--ink2);opacity:.5}
+.site{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:#fbf4e0;border:1.5px solid var(--ink2);
+  border-radius:4px;padding:10px 12px;margin-bottom:10px;color:var(--ink);box-shadow:3px 3px 0 rgba(107,82,56,.25);transition:transform .15s,box-shadow .15s}
+.site:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 rgba(158,46,29,.35);border-color:var(--red2)}
+.site .no{flex:none;width:38px;height:38px;border-radius:50%;background:var(--red);color:#fff6e4;display:grid;place-items:center;
+  font-size:17px;font-weight:800;border:2px solid #fff6e4;box-shadow:0 0 0 1.5px var(--red2)}
+.site b{display:block;font-size:17px;letter-spacing:.12em}
+.site small{display:block;font-size:11.5px;color:var(--mute);letter-spacing:.05em;margin-top:2px}
+.soon{font-size:12.5px;color:var(--mute);line-height:1.9;padding:2px 4px 8px;letter-spacing:.05em}
+.soon span{display:inline-block;border:1px dashed var(--mute);border-radius:3px;padding:0 6px;margin:2px 3px 2px 0}
+#legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;font-size:12px;color:var(--ink2);padding:4px 4px 0}
+#legend svg{display:block}
+#sideFoot{padding:10px 16px 14px;font-size:11px;color:var(--mute);border-top:1px solid rgba(107,82,56,.4);letter-spacing:.08em;line-height:1.7}
+
+/* ============ 控件 ============ */
+#zoomBox{position:absolute;right:16px;bottom:18px;display:flex;flex-direction:column;gap:6px;z-index:3}
+#zoomBox button{width:40px;height:40px;border-radius:50%;border:2px solid var(--ink2);background:var(--paper2);color:var(--ink);
+  font-size:20px;font-weight:700;box-shadow:2px 2px 0 rgba(0,0,0,.3)}
+#zoomBox button:hover{background:var(--red);color:#fff;border-color:var(--red2)}
+#zoomBox #zReset{font-size:13px}
+#hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(58,42,28,.82);color:#f6ecd2;
+  font-size:12.5px;padding:6px 14px;border-radius:999px;letter-spacing:.12em;pointer-events:none;transition:opacity 1s;z-index:3;white-space:nowrap}
+#sideToggle{display:none}
+
+/* ============ 景点卡片 ============ */
+#card{position:absolute;z-index:6;width:340px;max-width:calc(100% - 24px);background:var(--paper2);border:2px solid var(--ink);
+  box-shadow:6px 6px 0 rgba(58,42,28,.45);padding:0;transition:opacity .25s,transform .25s;
+  background-image:repeating-linear-gradient(0deg,rgba(120,90,50,.04) 0 1px,transparent 1px 3px)}
+#card.hidden{opacity:0;transform:translateY(8px) scale(.98);pointer-events:none}
+#card .band{background:var(--red);color:#fff6e4;padding:9px 14px 8px;display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--ink)}
+#card .band .no{font-size:13px;letter-spacing:.2em;opacity:.9}
+#card .band h2{margin:0;font-size:24px;letter-spacing:.2em;font-weight:800}
+#card .band .jp{margin-left:auto;font-size:11px;letter-spacing:.1em;opacity:.9}
+#card .cb{padding:12px 16px 14px}
+#card .meta{font-size:11.5px;color:var(--ink2);border-bottom:1px dashed var(--ink2);padding-bottom:8px;margin-bottom:8px;line-height:1.7}
+#card .meta i{font-style:normal;color:var(--red2);font-weight:700;margin-right:4px}
+#card .desc{font-family:"Noto Serif SC","Songti SC",serif;font-size:13.5px;line-height:1.85;text-align:justify}
+#card .desc p{margin:.3em 0}
+#card .tags{margin:8px 0 2px}
+#card .tags span{display:inline-block;font-size:11px;border:1px solid var(--ink2);padding:0 6px;margin:0 4px 4px 0;border-radius:2px;color:var(--ink2)}
+#card .acts{display:flex;gap:8px;margin-top:10px}
+#card .go{flex:1;background:var(--ink);color:var(--paper2);border:0;padding:10px 12px;font-size:15px;letter-spacing:.25em;font-weight:700;
+  box-shadow:3px 3px 0 var(--red)}
+#card .go:hover{background:var(--red2)}
+#card .alt{background:none;border:1.5px solid var(--ink2);color:var(--ink2);padding:8px 10px;font-size:12px}
+#card .x{position:absolute;right:8px;top:6px;background:none;border:0;color:#fff6e4;font-size:22px;line-height:1}
+
+/* ============ 场景浏览层 ============ */
+#viewer{position:fixed;inset:0;z-index:20;background:#111;display:flex;flex-direction:column;
+  transition:opacity .45s,clip-path .6s cubic-bezier(.7,0,.2,1);clip-path:circle(150% at var(--cx,50%) var(--cy,50%))}
+#viewer.hidden{opacity:0;pointer-events:none;clip-path:circle(0% at var(--cx,50%) var(--cy,50%))}
+#vBar{flex:none;height:44px;display:flex;align-items:center;gap:10px;padding:0 10px;background:var(--paper2);
+  border-bottom:3px double var(--ink2)}
+#vBar button,#vBar a{background:var(--ink);color:var(--paper2);border:0;padding:6px 12px;font-size:13px;letter-spacing:.15em;text-decoration:none;font-weight:700}
+#vBar button:hover,#vBar a:hover{background:var(--red)}
+#vBar a{background:none;color:var(--ink2);border:1px solid var(--ink2);font-weight:500}
+#vTitle{font-size:16px;letter-spacing:.25em;font-weight:800;color:var(--ink)}
+#vTitle small{font-size:11px;color:var(--mute);letter-spacing:.1em;margin-left:8px;font-weight:500}
+#vBar .sp{flex:1}
+#vFrame{flex:1;border:0;width:100%;background:#1b1a17}
+
+/* ============ 地图内 SVG 样式 ============ */
+.lbl{font-family:"Shippori Mincho","Noto Serif SC",serif;fill:var(--ink);paint-order:stroke;stroke:#f3e8cb;stroke-width:3px;stroke-linejoin:round}
+.lbl.road{font-size:9px;fill:#7a5c3a;letter-spacing:1.5px;stroke-width:2.4px}
+.lbl.lm{font-size:12px;font-weight:700;letter-spacing:1px}
+.lbl.big{font-size:17px;font-weight:800;letter-spacing:3px}
+.lbl.river{font-size:11px;fill:#3d6c7c;font-weight:700;letter-spacing:3px;stroke:#e8ecdc}
+.lbl.mt{font-size:13px;font-weight:800;fill:#3f5236;letter-spacing:2px;stroke:#d9dcbc}
+.lbl.area{font-size:15px;fill:#a0805a;font-weight:700;letter-spacing:8px;stroke:none;opacity:.8}
+.minor{opacity:0;transition:opacity .3s}
+svg[data-z="2"] .minor,svg[data-z="3"] .minor{opacity:1}
+.site-mk{cursor:pointer}
+.site-mk .ring{transform-box:fill-box;transform-origin:center;animation:pulse 2.4s ease-out infinite}
+.site-mk:hover .disc{fill:var(--red2)}
+.site-mk:hover .flag rect{fill:var(--red2)}
+@keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+
+/* ============ 窄屏 ============ */
+@media (max-width:760px){
+  #stage{flex-direction:column}
+  #side{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:58%;border-right:0;border-top:3px double var(--ink2);
+    transform:translateY(calc(100% - 64px));transition:transform .35s;box-shadow:0 -6px 18px rgba(0,0,0,.35)}
+  #side.open{transform:none}
+  #sideHead{padding:10px 16px 8px;cursor:pointer}
+  #sideHead h1{font-size:20px;margin:2px 0 0}
+  #sideHead .kicker,#sideHead .stamp{display:none}
+  #sideHead .sub{font-size:11px}
+  #sideToggle{display:block;position:absolute;right:14px;top:16px;background:none;border:1.5px solid var(--ink2);font-size:12px;padding:3px 8px;color:var(--ink2)}
+  #zoomBox{bottom:80px;right:12px}
+  #hint{bottom:78px;font-size:11.5px}
+  #card{left:12px !important;right:12px;top:auto !important;bottom:76px;width:auto}
+  #vTitle small{display:none}
+  #vBar a{display:none}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <aside id="side">
+    <div id="sideHead">
+      <div class="kicker">昭和懐古 · 立體導覽</div>
+      <h1>京都名所遊覧圖</h1>
+      <div class="sub">KYOTO · ILLUSTRATED GUIDE MAP</div>
+      <div class="stamp">京都<br>観光</div>
+      <button id="sideToggle">景点 ▴</button>
+    </div>
+    <div id="sideBody">
+      <div class="secT">已開放 3D 導覽</div>
+      <div id="siteList"></div>
+      <div class="secT">籌備中</div>
+      <div class="soon" id="soonList"></div>
+      <div class="secT">圖例</div>
+      <div id="legend"></div>
+    </div>
+    <div id="sideFoot">点击地图上的朱红印章或左侧景点卡片，即可进入该处的 3D 导览。拖动平移，滚轮或双指缩放。</div>
+  </aside>
+  <div id="mapWrap">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" data-z="1"></svg>
+    <div id="card" class="hidden"></div>
+    <div id="zoomBox">
+      <button id="zIn" title="放大">＋</button>
+      <button id="zOut" title="缩小">－</button>
+      <button id="zReset" title="全图">全</button>
+    </div>
+    <div id="hint">点击朱红印章 · 进入 3D 导览</div>
+  </div>
+</div>
+
+<div id="viewer" class="hidden">
+  <div id="vBar">
+    <button id="vBack">← 返回地图</button>
+    <div id="vTitle"></div>
+    <div class="sp"></div>
+    <a id="vOpen" href="#" target="_blank" rel="noopener">在新标签页打开</a>
+  </div>
+  <iframe id="vFrame" title="3D 导览" allowfullscreen></iframe>
+</div>
+
+<script>
+/* =====================================================================
+   景点数据：以后新增景点只需在 SITES 里追加一项。
+   href 为相对本文件的路径（请保持文件夹结构）；lat/lon 为真实经纬度。
+   ===================================================================== */
+const SITES = [
+  {
+    id:'shisendo', no:'壹', name:'詩仙堂', cn:'诗仙堂', jp:'しせんどう · 丈山寺',
+    lat:35.0441, lon:135.7966, href:'shisendo/shisendo.html',
+    addr:'左京区一乗寺門口町 27', access:'叡山电车「一乗寺」站步行约 15 分钟',
+    era:'宽永十八年（1641）',
+    desc:[
+      '江户初期文人石川丈山辞官隐居时所筑山庄「凹凸窠」，因堂内「诗仙之间」悬挂狩野探幽所绘中国三十六位诗人像、并由丈山亲题诗句而得名。',
+      '白砂与皋月杜鹃修剪成的唐样庭园层层下沉，园中「僧都（鹿威）」竹筒定时敲石，清响回荡于一乘寺的山脚。初夏杜鹃与深秋红叶最负盛名。'
+    ],
+    tags:['曹洞宗','唐样庭园','鹿威','红叶名所']
+  },
+  {
+    id:'rokkakudo', no:'貳', name:'六角堂', cn:'六角堂 · 顶法寺', jp:'ろっかくどう · 頂法寺',
+    lat:35.0068, lon:135.7600, href:'rokkakudo/rokkakudo.html',
+    addr:'中京区六角通東洞院西入堂之前町 248', access:'地铁「乌丸御池」站步行约 3 分钟',
+    era:'传为用明天皇二年（587）',
+    desc:[
+      '相传圣德太子为供奉护身的如意轮观音而建，本堂呈六角形，故俗称六角堂。门前「脐石」相传标记着平安京的中心，被视为「京都之脐」。',
+      '历代住持池坊家在此向佛前供花，发展出日本最古老的花道流派「池坊」，六角堂因而被尊为花道发祥地；亲鸾上人亦曾在此闭关百日。'
+    ],
+    tags:['西国三十三所第十八番','花道发祥地','脐石','都心古刹']
+  }
+];
+const SOON = ['清水寺','金閣寺','銀閣寺','伏見稲荷','南禅寺','龍安寺'];
+
+/* ===================== 投影：经纬度 → 图面坐标 ===================== */
+const LON0=135.72, LAT0=35.07, KX=91.2*90, KY=111*90; // 每公里 90 单位
+const P=(lon,lat)=>[(lon-LON0)*KX,(LAT0-lat)*KY];
+const W=985, H=999; // 东至 135.84，南至 34.97
+
+/* ===================== 小工具 ===================== */
+const NS='http://www.w3.org/2000/svg';
+const svg=document.getElementById('map');
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function g(parent,attrs){return el('g',attrs||{},parent)}
+let seed=20261015; const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const r=(a,b)=>a+(b-a)*rnd();
+function smooth(pts,closed){ // Catmull-Rom → 贝塞尔
+  if(pts.length<3) return 'M'+pts.map(p=>p.join(',')).join('L');
+  const n=pts.length, at=i=>closed?pts[(i+n)%n]:pts[Math.max(0,Math.min(n-1,i))];
+  let d='M'+pts[0][0].toFixed(1)+','+pts[0][1].toFixed(1);
+  const m=closed?n:n-1;
+  for(let i=0;i<m;i++){
+    const p0=at(i-1),p1=at(i),p2=at(i+1),p3=at(i+2);
+    d+='C'+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+','+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+' '+
+         (p2[0]-(p3[0]-p1[0])/6).toFixed(1)+','+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+' '+p2[0].toFixed(1)+','+p2[1].toFixed(1);
+  }
+  return closed?d+'Z':d;
+}
+const LL=a=>a.map(([lo,la])=>P(lo,la));
+function inPoly(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];
+  if(((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c}return c}
+function text(parent,x,y,str,cls,extra){const t=el('text',Object.assign({x,y,class:'lbl '+(cls||''),'text-anchor':'middle'},extra||{}),parent);t.textContent=str;return t}
+function vtext(parent,x,y,str,cls,gap){ // 竖排文字
+  const gg=g(parent);[...str].forEach((ch,i)=>text(gg,x,y+i*(gap||14),ch,cls));return gg}
+
+/* ===================== SVG defs ===================== */
+const defs=el('defs',{},svg);
+defs.innerHTML=`
+<filter id="paperTex" x="0" y="0" width="100%" height="100%">
+  <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7" result="n"/>
+  <feColorMatrix type="matrix" values="0 0 0 0 .45  0 0 0 0 .33  0 0 0 0 .18  0 0 0 .16 0"/>
+</filter>
+<filter id="blotch" x="0" y="0" width="100%" height="100%">
+  <feTurbulence type="fractalNoise" baseFrequency=".006" numOctaves="3" seed="3"/>
+  <feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .38  0 0 0 0 .16  0 0 0 .55 -.18"/>
+</filter>
+<filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+  <feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="2" seed="11" result="t"/>
+  <feDisplacementMap in="SourceGraphic" in2="t" scale="2.2"/>
+</filter>
+<radialGradient id="vign" cx="50%" cy="50%" r="72%">
+  <stop offset="62%" stop-color="#5a3a18" stop-opacity="0"/>
+  <stop offset="100%" stop-color="#5a3a18" stop-opacity=".38"/>
+</radialGradient>
+<pattern id="blocks" width="9" height="9" patternUnits="userSpaceOnUse">
+  <rect width="9" height="9" fill="#ead9b2"/>
+  <rect x="1" y="1" width="7" height="7" fill="#e3cfa2"/>
+</pattern>
+<pattern id="fields" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-8)">
+  <rect width="14" height="14" fill="#e6dcb0"/>
+  <path d="M0 4h14M0 9h14" stroke="#c9bd88" stroke-width=".7"/>
+</pattern>
+<pattern id="forest" width="10" height="10" patternUnits="userSpaceOnUse">
+  <rect width="10" height="10" fill="#9fb07f"/>
+  <circle cx="3" cy="3" r="2.1" fill="#7f9765"/><circle cx="8" cy="7.5" r="2.1" fill="#7f9765"/>
+</pattern>
+<pattern id="waves" width="16" height="6" patternUnits="userSpaceOnUse">
+  <path d="M0 4 Q4 1 8 4 T16 4" fill="none" stroke="#ecf2e6" stroke-width=".8" opacity=".8"/>
+</pattern>
+<linearGradient id="cloudG" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#f8eccb"/><stop offset="1" stop-color="#ead39a"/>
+</linearGradient>
+<clipPath id="mapClip"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath>
+<symbol id="temple" viewBox="-12 -12 24 20" overflow="visible">
+  <path d="M-11 -2 Q-6 -3 -4 -9 L4 -9 Q6 -3 11 -2 Z" fill="#5b4330"/>
+  <rect x="-7" y="-2" width="14" height="7" fill="#f2e6c8" stroke="#5b4330" stroke-width="1"/>
+  <path d="M-3 5V0h6v5" fill="none" stroke="#5b4330" stroke-width="1"/>
+</symbol>
+<symbol id="torii" viewBox="-12 -12 24 22" overflow="visible">
+  <path d="M-11 -8 Q0 -11 11 -8 L10 -6 Q0 -8.5 -10 -6Z" fill="#c2412b" stroke="#6a1e12" stroke-width=".7"/>
+  <rect x="-8" y="-4.5" width="16" height="1.8" fill="#c2412b"/>
+  <rect x="-6.5" y="-6" width="2.2" height="15" fill="#c2412b"/><rect x="4.3" y="-6" width="2.2" height="15" fill="#c2412b"/>
+</symbol>
+<symbol id="pagoda" viewBox="-10 -24 20 28" overflow="visible">
+  <g fill="#5b4330"><path d="M-9 0h18l-3-3h-12z"/><path d="M-8 -6h16l-3-3h-10z"/><path d="M-7 -12h14l-3-3h-8z"/><path d="M-6 -18h12l-3-3h-6z"/>
+  <rect x="-.6" y="-25" width="1.2" height="5"/></g>
+  <g fill="#f2e6c8"><rect x="-4" y="-3" width="8" height="3"/><rect x="-3.5" y="-9" width="7" height="3"/><rect x="-3" y="-15" width="6" height="3"/></g>
+</symbol>
+<symbol id="castle" viewBox="-12 -16 24 20" overflow="visible">
+  <rect x="-10" y="-1" width="20" height="5" fill="#8a7a66"/>
+  <path d="M-9 -1 Q-4 -2 -3 -6 h6 Q4 -2 9 -1Z" fill="#5b4330"/><rect x="-5" y="-6" width="10" height="4" fill="#f2e6c8"/>
+  <path d="M-6 -6 Q-2 -7 -1.5 -11 h3 Q2 -7 6 -6Z" fill="#5b4330"/><rect x="-2.5" y="-11" width="5" height="3" fill="#f2e6c8"/>
+  <path d="M-3.5 -11 L0 -15 L3.5 -11Z" fill="#5b4330"/>
+</symbol>
+<symbol id="tower" viewBox="-6 -30 12 32" overflow="visible">
+  <rect x="-8" y="-3" width="16" height="5" fill="#f2e6c8" stroke="#5b4330"/>
+  <path d="M-1.6 -3 L-1 -22 h2 L1.6 -3Z" fill="#f6efe0" stroke="#5b4330" stroke-width=".8"/>
+  <rect x="-3.2" y="-22" width="6.4" height="3" fill="#c2412b" stroke="#5b4330" stroke-width=".6"/>
+  <path d="M-.4 -22 V-29 h.8 V-22" fill="#5b4330"/>
+</symbol>
+<symbol id="station" viewBox="-12 -10 24 16" overflow="visible">
+  <rect x="-11" y="-4" width="22" height="9" fill="#f2e6c8" stroke="#3a2a1c" stroke-width="1.2"/>
+  <path d="M-12 -4 L0 -9 L12 -4Z" fill="#3a2a1c"/><circle cx="0" cy="0.5" r="2.4" fill="#fff" stroke="#3a2a1c" stroke-width=".8"/>
+</symbol>`;
+
+/* ===================== 图层 ===================== */
+const world=g(svg,{id:'world'});
+const frame=g(world);
+const content=g(world,{'clip-path':'url(#mapClip)'});
+const L={}; ['paper','fields','town','minorRoads','green','water','roads','rail','mount','icons','labels','clouds','sites'].forEach(k=>L[k]=g(content,{id:'L_'+k}));
+L.roadLbl=g(L.labels,{class:'minor'});
+
+/* ---------- 纸张与外框 ---------- */
+el('rect',{x:-60,y:-60,width:W+120,height:H+120,fill:'#d9c69c'},frame);
+el('rect',{x:-60,y:-60,width:W+120,height:H+120,filter:'url(#paperTex)'},frame);
+el('rect',{x:-46,y:-46,width:W+92,height:H+92,fill:'none',stroke:'#3a2a1c','stroke-width':3},frame);
+el('rect',{x:-38,y:-38,width:W+76,height:H+76,fill:'none',stroke:'#3a2a1c','stroke-width':1},frame);
+el('rect',{x:-30,y:-30,width:W+60,height:H+60,fill:'none',stroke:'#c2412b','stroke-width':4,'stroke-dasharray':'14 4 2 4'},frame);
+el('rect',{x:-2,y:-2,width:W+4,height:H+4,fill:'none',stroke:'#3a2a1c','stroke-width':2},frame);
+// 角花
+[[-42,-42,1,1],[W+42,-42,-1,1],[-42,H+42,1,-1],[W+42,H+42,-1,-1]].forEach(([x,y,sx,sy])=>{
+  el('path',{d:`M${x} ${y} h${30*sx} M${x} ${y} v${30*sy} M${x+8*sx} ${y+8*sy} h${16*sx} v${-4*sy} M${x+8*sx} ${y+8*sy} v${16*sy} h${-4*sx}`,stroke:'#c2412b','stroke-width':2,fill:'none'},frame);
+  el('rect',{x:x+(sx>0?2:-12),y:y+(sy>0?2:-12),width:10,height:10,fill:'#c2412b',transform:`rotate(45 ${x+7*sx} ${y+7*sy})`},frame);
+});
+// 外框四边文字
+text(frame,W/2,-48+0,'','');
+const topBand=text(frame,W/2,-40+20-6,'◆ 京 都 名 所 遊 覧 圖 ◆ KYOTO SIGHTSEEING MAP ◆','',{style:'font-size:12px;letter-spacing:6px;font-weight:800;fill:#3a2a1c;stroke:none'});
+topBand.setAttribute('y',-33);
+text(frame,W/2,H+44,'昭和百一年十月 發行　　洛中洛外 · 名所立體導覽　　縮尺約一萬分之一','',{style:'font-size:11px;letter-spacing:4px;fill:#6b5238;stroke:none'});
+
+el('rect',{x:0,y:0,width:W,height:H,fill:'#f0e4c3'},L.paper);
+el('rect',{x:0,y:0,width:W,height:H,filter:'url(#blotch)'},L.paper);
+el('rect',{x:0,y:0,width:W,height:H,filter:'url(#paperTex)',opacity:.8},L.paper);
+
+/* ---------- 山地范围 ---------- */
+const EAST_FOOT=[[135.797,35.072],[135.800,35.058],[135.801,35.048],[135.800,35.037],[135.800,35.027],[135.797,35.016],[135.793,35.008],[135.787,35.000],[135.782,34.990],[135.780,34.980],[135.778,34.966]];
+const EAST_POLY=LL([...EAST_FOOT,[135.85,34.966],[135.85,35.075]]);
+const NORTH_POLY=LL([[135.715,35.075],[135.715,35.056],[135.727,35.058],[135.738,35.063],[135.750,35.066],[135.762,35.064],[135.772,35.063],[135.782,35.062],[135.792,35.064],[135.797,35.072],[135.797,35.075]]);
+const WEST_POLY=LL([[135.715,35.056],[135.727,35.058],[135.732,35.052],[135.731,35.044],[135.727,35.039],[135.721,35.033],[135.715,35.030]]);
+
+// 郊外田地（北部、东北部的旧农地）
+el('path',{d:smooth(LL([[135.77,35.064],[135.78,35.050],[135.79,35.040],[135.80,35.050],[135.797,35.070]]),true),fill:'url(#fields)',opacity:.75},L.fields);
+el('path',{d:smooth(LL([[135.718,35.050],[135.735,35.056],[135.745,35.060],[135.76,35.062],[135.758,35.052],[135.742,35.050],[135.725,35.045]]),true),fill:'url(#fields)',opacity:.6},L.fields);
+
+// 市街地
+const TOWN=LL([[135.715,35.050],[135.735,35.050],[135.745,35.052],[135.758,35.055],[135.766,35.050],[135.775,35.044],[135.785,35.036],[135.795,35.030],[135.798,35.022],[135.794,35.010],[135.786,35.000],[135.780,34.988],[135.777,34.966],[135.715,34.966]]);
+el('path',{d:smooth(TOWN,true),fill:'url(#blocks)',opacity:.8},L.town);
+
+/* ---------- 次要街巷网格 ---------- */
+(function(){
+  const d=[];
+  for(let la=34.9705;la<35.046;la+=0.00225){const[x1,y]=P(135.725,la);const[x2]=P(135.786,la);d.push(`M${x1.toFixed(1)} ${y.toFixed(1)}H${x2.toFixed(1)}`)}
+  for(let lo=135.7255;lo<135.786;lo+=0.00265){const[x,y1]=P(lo,35.046);const[,y2]=P(lo,34.968);d.push(`M${x.toFixed(1)} ${y1.toFixed(1)}V${y2.toFixed(1)}`)}
+  const cp=el('clipPath',{id:'townClip'},defs); el('path',{d:smooth(TOWN,true)},cp);
+  el('path',{d:d.join(''),stroke:'#b49a70','stroke-width':.55,opacity:.65,fill:'none','clip-path':'url(#townClip)'},L.minorRoads);
+})();
+
+/* ---------- 绿地：御所、糺之森、植物园、二条城 ---------- */
+function rectLL(lo1,la1,lo2,la2,attrs,parent){const[a,b]=P(lo1,la1),[c,d]=P(lo2,la2);return el('rect',Object.assign({x:Math.min(a,c),y:Math.min(b,d),width:Math.abs(c-a),height:Math.abs(d-b)},attrs),parent)}
+rectLL(135.7595,35.0298,135.7672,35.0172,{fill:'url(#forest)',stroke:'#5b4330','stroke-width':1.2},L.green);
+rectLL(135.7618,35.0268,135.7648,35.0228,{fill:'#efe4c3',stroke:'#5b4330','stroke-width':.8},L.green); // 内里
+el('path',{d:smooth(LL([[135.7712,35.0305],[135.7700,35.0360],[135.7712,35.0405],[135.7745,35.0400],[135.7742,35.0340]]),true),fill:'url(#forest)',stroke:'#5b4330','stroke-width':.6},L.green);
+el('path',{d:smooth(LL([[135.7615,35.0465],[135.7615,35.0520],[135.7665,35.0525],[135.7672,35.0470]]),true),fill:'url(#forest)',opacity:.85},L.green);
+rectLL(135.7438,35.0170,135.7522,35.0115,{fill:'#7eaab6',stroke:'#3d6c7c','stroke-width':1},L.green);
+rectLL(135.7448,35.0161,135.7512,35.0124,{fill:'url(#forest)',stroke:'#5b4330','stroke-width':.8},L.green);
+rectLL(135.7478,34.9822,135.7492,34.9792,{fill:'url(#forest)'},L.green);
+// 冈崎公园
+rectLL(135.7800,35.0170,135.7855,35.0122,{fill:'#d9d6a8',stroke:'#8b7456','stroke-width':.6},L.green);
+
+/* ---------- 河川 ---------- */
+function river(pts,w,name){
+  const d=smooth(LL(pts));
+  el('path',{d,stroke:'#4d7f8f','stroke-width':w+2.4,fill:'none','stroke-linecap':'round'},L.water);
+  el('path',{d,stroke:'#8fbcc8','stroke-width':w,fill:'none','stroke-linecap':'round'},L.water);
+  if(w>4) el('path',{d,stroke:'#d6e6df','stroke-width':w*.25,fill:'none','stroke-dasharray':'2 9',opacity:.9},L.water);
+  return d;
+}
+const KAMO_N=[[135.7555,35.072],[135.7570,35.063],[135.7600,35.056],[135.7625,35.050],[135.7650,35.0445],[135.7680,35.0385],[135.7700,35.034],[135.7719,35.0303]];
+const KAMO_S=[[135.7719,35.0303],[135.7714,35.0230],[135.7710,35.0170],[135.7716,35.0090],[135.7716,35.0037],[135.7700,34.9960],[135.7682,34.9895],[135.7672,34.9820],[135.7655,34.9740],[135.7640,34.966]];
+const TAKANO=[[135.7950,35.072],[135.7900,35.060],[135.7850,35.050],[135.7800,35.043],[135.7765,35.037],[135.7740,35.033],[135.7719,35.0303]];
+river(KAMO_N,6.5); river(KAMO_S,9); river(TAKANO,5);
+river([[135.7935,35.0092],[135.7880,35.0118],[135.7830,35.0118],[135.7790,35.0120],[135.7745,35.0118],[135.7718,35.0115]],3);  // 琵琶湖疏水
+river([[135.7944,35.0100],[135.7950,35.0170],[135.7958,35.0230],[135.7968,35.0275],[135.7930,35.0310],[135.7880,35.0340],[135.7820,35.0380],[135.7772,35.0400]],1.8); // 疏水分线（哲学之道）
+river([[135.7510,35.050],[135.7510,35.035],[135.7508,35.020],[135.7510,35.0010],[135.7512,34.985]],1.6); // 堀川
+river([[135.722,35.040],[135.7285,35.030],[135.733,35.015],[135.736,35.000],[135.738,34.980],[135.737,34.966]],2.4); // 纸屋川·天神川
+
+/* ---------- 主干道与市电 ---------- */
+const ROADS=[ // [名称, 经纬度点列, 是否有市电]
+  ['北大路通',[[135.722,35.0430],[135.745,35.0440],[135.760,35.0447],[135.775,35.0443],[135.790,35.0440]],1],
+  ['今出川通',[[135.722,35.0295],[135.760,35.0298],[135.7715,35.0298],[135.780,35.0293],[135.7975,35.0275]],1],
+  ['丸太町通',[[135.722,35.0175],[135.760,35.0172],[135.7795,35.0170],[135.788,35.0172]],1],
+  ['御池通',[[135.735,35.0105],[135.770,35.0105]],0],
+  ['三条通',[[135.722,35.0090],[135.7716,35.0088],[135.785,35.0090],[135.7935,35.0088]],0],
+  ['四条通',[[135.722,35.0037],[135.770,35.0037],[135.7785,35.0037]],1],
+  ['五条通',[[135.722,34.9960],[135.770,34.9960],[135.780,34.9960]],0],
+  ['七条通',[[135.722,34.9895],[135.770,34.9895],[135.7735,34.9893]],1],
+  ['九条通',[[135.722,34.9765],[135.770,34.9765],[135.779,34.9765]],1],
+  ['西大路通',[[135.7320,35.040],[135.7320,34.966]],1],
+  ['千本通',[[135.7420,35.050],[135.7420,34.966]],1],
+  ['堀川通',[[135.7510,35.046],[135.7505,34.966]],0],
+  ['烏丸通',[[135.7595,35.058],[135.7595,34.966]],1],
+  ['河原町通',[[135.7695,34.9765],[135.7690,35.0100],[135.7695,35.0255],[135.7712,35.0298]],1],
+  ['東大路通',[[135.7782,34.966],[135.7795,35.0000],[135.7795,35.0200],[135.7795,35.0300],[135.7790,35.0440]],1],
+  ['白川通',[[135.7900,35.0170],[135.7920,35.0270],[135.7900,35.0440],[135.7905,35.0560]],0],
+];
+const tramD=[], roadDark=g(L.roads), roadLight=g(L.roads);
+ROADS.forEach(([n,pts,tram])=>{
+  const pp=LL(pts), d='M'+pp.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join('L');
+  el('path',{d,stroke:'#6b4f35','stroke-width':4.6,fill:'none','stroke-linejoin':'round','stroke-linecap':'square'},roadDark);
+  el('path',{d,stroke:'#f6ead0','stroke-width':3,fill:'none','stroke-linejoin':'round','stroke-linecap':'square'},roadLight);
+  if(tram) tramD.push(d);
+  // 路名
+  const horiz=Math.abs(pp[pp.length-1][0]-pp[0][0])>Math.abs(pp[pp.length-1][1]-pp[0][1]);
+  if(horiz){const x=n==='今出川通'||n==='丸太町通'?140:n==='北大路通'?180:n==='四条通'||n==='三条通'||n==='御池通'?450:120;
+    const y=pp[0][1]-4.5; text(L.roadLbl,x,y,n,'road');}
+  else{const x=pp[0][0]+5;const y=n==='烏丸通'?820:n==='河原町通'?860:n==='東大路通'?880:760; const gg=vtext(L.roadLbl,x+2,y,n,'road',10);gg.setAttribute('text-anchor','start')}
+});
+el('path',{d:tramD.join(''),stroke:'#c2412b','stroke-width':1,fill:'none','stroke-dasharray':'4 2.5'},L.roads);
+
+/* ---------- 铁路 ---------- */
+function rail(pts,label){
+  const d=smooth(LL(pts));
+  el('path',{d,stroke:'#2b2016','stroke-width':3.6,fill:'none'},L.rail);
+  el('path',{d,stroke:'#f6eedb','stroke-width':2,fill:'none','stroke-dasharray':'7 7'},L.rail);
+}
+rail([[135.715,34.9862],[135.740,34.9860],[135.7588,34.9858],[135.775,34.9852],[135.787,34.9822],[135.80,34.978],[135.82,34.976],[135.85,34.975]]); // 东海道本线
+rail([[135.7727,35.0302],[135.7790,35.0350],[135.7836,35.0445],[135.7895,35.0510],[135.7985,35.0575],[135.8070,35.0650]]); // 叡山电车
+rail([[135.7735,34.966],[135.7700,34.9890],[135.7726,35.0040],[135.7726,35.0170],[135.7727,35.0302]]); // 京阪（鸭川东岸）
+rail([[135.7720,35.0302],[135.7690,35.0360]]); // 鞍马线起点
+// 比叡山缆车
+const[c1x,c1y]=P(135.807,35.065),[c2x,c2y]=P(135.825,35.068);
+el('path',{d:`M${c1x} ${c1y}L${c2x} ${c2y}`,stroke:'#2b2016','stroke-width':1.2,'stroke-dasharray':'1 3',fill:'none'},L.rail);
+
+/* ---------- 山峦（鸟瞰式丘陵） ---------- */
+const hills=[];
+function scatter(poly,count,wMin,wMax,tint){
+  let xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  let n=0,guard=0;while(n<count&&guard++<count*40){const x=r(x0,x1),y=r(y0,y1);if(!inPoly(x,y,poly))continue;hills.push({x,y,w:r(wMin,wMax),tint:tint(x,y)});n++}
+}
+scatter(EAST_POLY,150,38,82,(x,y)=>Math.min(1,Math.max(0,(x-720)/240)));
+scatter(NORTH_POLY,70,40,80,(x,y)=>Math.min(1,Math.max(0,(60-y)/140)));
+scatter(WEST_POLY,24,34,64,()=>.15);
+[[135.7885,35.0262,46],[135.7432,35.0393,32],[135.7965,35.0395,40]].forEach(([lo,la,w])=>{const[x,y]=P(lo,la);hills.push({x,y:y+8,w,tint:0})});
+// 比叡山
+const[hx,hy]=P(135.834,35.067); hills.push({x:hx,y:hy+40,w:150,tint:.55,big:true});
+hills.sort((a,b)=>a.y-b.y);
+const greens=[['#a5b583','#7e9665'],['#98ab78','#728c5d'],['#aab988','#83996a'],['#93a774','#6d8658']];
+const blues=['#a7b8a8','#8ea596'];
+function mix(a,b,t){const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);const c=i=>Math.round(((pa>>i)&255)*(1-t)+((pb>>i)&255)*t);return '#'+((1<<24)|(c(16)<<16)|(c(8)<<8)|c(0)).toString(16).slice(1)}
+hills.forEach(h=>{
+  const{x,y,w}=h, hh=w*(h.big?.75:r(.48,.62)), G=greens[Math.floor(rnd()*greens.length)];
+  const base=mix(G[0],blues[0],h.tint*.8), dark=mix(G[1],blues[1],h.tint*.8);
+  const gg=g(L.mount);
+  const pk=x+r(-.08,.08)*w;
+  const body=`M${x-w/2} ${y} C${x-w*.36} ${y-hh*.55} ${pk-w*.22} ${y-hh} ${pk} ${y-hh} C${pk+w*.22} ${y-hh} ${x+w*.36} ${y-hh*.55} ${x+w/2} ${y} Z`;
+  el('path',{d:body,fill:base,stroke:'#4a3a28','stroke-width':.9,'stroke-opacity':.75},gg);
+  el('path',{d:`M${pk} ${y-hh} C${pk+w*.22} ${y-hh} ${x+w*.36} ${y-hh*.55} ${x+w/2} ${y} L${pk+w*.08} ${y} C${pk+w*.12} ${y-hh*.45} ${pk+w*.08} ${y-hh*.8} ${pk} ${y-hh} Z`,fill:dark,opacity:.85},gg);
+  // 晕渲笔触
+  let hd='';for(let i=0;i<4;i++){const t=.25+i*.17,sx=pk+w*(.12+t*.32),sy=y-hh*(1-t)*.95;hd+=`M${sx.toFixed(1)} ${sy.toFixed(1)}l${(w*.05).toFixed(1)} ${(hh*.22).toFixed(1)}`}
+  el('path',{d:hd,stroke:'#4a3a28','stroke-width':.7,opacity:.45},gg);
+  // 松树点景
+  if(!h.big&&rnd()<.7){const k=1+Math.floor(rnd()*3);for(let i=0;i<k;i++){const tx=x+r(-.3,.25)*w,ty=y-hh*r(.2,.55),s=r(2.4,3.6);
+    el('path',{d:`M${tx} ${ty-s*2}L${tx-s} ${ty}L${tx+s} ${ty}Z`,fill:dark,stroke:'#3e4a2e','stroke-width':.4},gg)}}
+});
+// 大文字
+(function(){const[x,y]=P(135.8035,35.0235);const gg=g(L.mount,{transform:`translate(${x} ${y-14}) rotate(-8)`});
+  el('path',{d:'M-9 -2H9M0 -10V-2L-8 10M0 -2L8 10',stroke:'#f6ecd2','stroke-width':3,'stroke-linecap':'round',fill:'none'},gg);
+  el('path',{d:'M-9 -2H9M0 -10V-2L-8 10M0 -2L8 10',stroke:'#c2412b','stroke-width':1,'stroke-linecap':'round',fill:'none'},gg);})();
+
+/* ---------- 瑞云（すやり霞） ---------- */
+function cloud(x,y,w,h){
+  const gg=g(L.clouds,{opacity:.93});
+  const n=Math.max(3,Math.round(w/45));let d=`M${x} ${y+h}`;
+  for(let i=0;i<=n;i++){const cx=x+w*i/n;d+=` Q${cx-w/n/2} ${y-h*.35} ${cx} ${y+(i===0||i===n?h*.5:0)}`}
+  d+=` L${x+w} ${y+h} Q${x+w+h} ${y+h*1.4} ${x+w} ${y+h*1.8} L${x} ${y+h*1.8} Q${x-h} ${y+h*1.4} ${x} ${y+h} Z`;
+  el('path',{d,fill:'url(#cloudG)',stroke:'#c7983f','stroke-width':1.4},gg);
+  el('path',{d:`M${x+h*.6} ${y+h*1.15}H${x+w-h*.6}`,stroke:'#c7983f','stroke-width':.8,opacity:.7},gg);
+}
+cloud(-30,-14,320,26); cloud(380,-20,240,24); cloud(820,150,190,22); cloud(880,420,140,20); cloud(860,760,160,22); cloud(-40,980,260,22);
+
+/* ---------- 名所图标与标注 ---------- */
+const LANDMARKS=[
+  // [名称, lon, lat, 图标, 标注偏移dx, dy, 是否大字]
+  ['京都御所',135.7625,35.0240,null,0,4,1],
+  ['二條城',135.7480,35.0142,'castle',0,-16],
+  ['京都驛',135.7588,34.9858,'station',0,16],
+  ['京都塔',135.7593,34.9876,'tower',22,-14],
+  ['東寺',135.7477,34.9806,'pagoda',16,4],
+  ['西本願寺',135.7515,34.9917,'temple',-4,14],
+  ['東本願寺',135.7580,34.9913,'temple',26,4],
+  ['三十三間堂',135.7718,34.9879,'temple',28,4],
+  ['清水寺',135.7850,34.9949,'temple',0,14],
+  ['八坂神社',135.7785,35.0037,'torii',26,2],
+  ['平安神宮',135.7824,35.0160,'torii',0,14],
+  ['南禪寺',135.7944,35.0110,'temple',0,14],
+  ['銀閣寺',135.7982,35.0270,'temple',0,14],
+  ['金閣寺',135.7292,35.0394,'temple',0,14],
+  ['北野天滿宮',135.7353,35.0312,'torii',0,14],
+  ['大德寺',135.7461,35.0440,'temple',0,14],
+  ['下鴨神社',135.7728,35.0389,'torii',26,2],
+  ['上賀茂神社',135.7524,35.0602,'torii',-30,2],
+  ['修學院離宮',135.8028,35.0544,'temple',0,14],
+  ['京都大學',135.7808,35.0262,null,0,0],
+  ['植物園',135.7642,35.0495,null,0,0],
+];
+LANDMARKS.forEach(([n,lo,la,ic,dx,dy,big])=>{
+  const[x,y]=P(lo,la);
+  if(ic){const s=ic==='tower'?1.1:1;el('use',{href:'#'+ic,x:x-12*s,y:y-12*s,width:24*s,height:22*s},L.icons)}
+  text(L.labels,x+dx,y+dy+(ic?4:0),n,big?'big':'lm');
+});
+// 地区名
+[['洛　北',135.738,35.0535],['西　陣',135.7440,35.0280],['中　京',135.7520,35.0070],['祇　園',135.7745,35.0010],['下　京',135.7480,34.9970],['岡　崎',135.7840,35.0200],['一乘寺',135.7840,35.0480],['北白川',135.7880,35.0360],['東　山',135.7790,34.9925]]
+  .forEach(([n,lo,la])=>{const[x,y]=P(lo,la);text(L.labels,x,y,n,'area')});
+// 河名
+(function(){const[a,b]=P(135.7735,35.000);vtext(L.labels,a+14,b-20,'鴨川','river',13);
+  const[c,d]=P(135.7615,35.055);vtext(L.labels,c-14,d-6,'賀茂川','river',13);
+  const[e,f]=P(135.7845,35.0490);vtext(L.labels,e+14,f-6,'高野川','river',13);
+  const[h,i]=P(135.7860,35.0105);text(L.labels,h,i+12,'琵琶湖疏水','river',{style:'font-size:9px'});
+  const[j,k]=P(135.7960,35.0205);vtext(L.labels,j+9,k-12,'哲學之道','river',10).setAttribute('style','font-size:8px');})();
+// 山名
+(function(){
+  const lab=(n,lo,la,big)=>{const[x,y]=P(lo,la);const gg=vtext(L.labels,x,y,n,'mt',big?17:14);if(big)gg.setAttribute('style','font-size:16px')};
+  lab('比叡山',135.834,35.0585,1); lab('如意嶽',135.812,35.0170); lab('東山三十六峰',135.803,34.9905); lab('衣笠山',135.7225,35.0465); lab('船岡山',135.7400,35.0365);lab('吉田山',135.7905,35.0225);
+  const[x,y]=P(135.8195,35.0440);text(L.labels,x,y,'瓜生山','mt',{style:'font-size:11px'});
+  const[ax,ay]=P(135.758,35.0700);text(L.labels,ax,ay+18,'北　山','mt');
+})();
+// 铁路名
+(function(){const[a,b]=P(135.728,34.9862);text(L.labels,a,b-6,'東海道本線','road',{style:'font-size:8.5px;fill:#2b2016'});
+  const[c,d]=P(135.7905,35.0470);text(L.labels,c+30,d+8,'叡山電車','road',{style:'font-size:8.5px;fill:#2b2016'});})();
+
+/* ---------- 罗盘、比例尺、题签 ---------- */
+(function(){
+  const[x,y]=[70,905];const gg=g(L.labels,{transform:`translate(${x} ${y})`});
+  el('circle',{r:34,fill:'#f6ecd2',stroke:'#3a2a1c','stroke-width':1.5},gg);
+  el('circle',{r:28,fill:'none',stroke:'#c2412b','stroke-width':.8,'stroke-dasharray':'2 2'},gg);
+  el('path',{d:'M0 -30L6 0L0 30L-6 0Z',fill:'#3a2a1c'},gg);el('path',{d:'M0 -30L6 0L0 0Z',fill:'#c2412b'},gg);
+  el('path',{d:'M-30 0L0 -5L30 0L0 5Z',fill:'#6b5238',opacity:.7},gg);
+  text(gg,0,-38,'北','',{style:'font-size:13px;font-weight:800;fill:#c2412b'});
+  // 比例尺：1 公里 = 90 单位
+  const sb=g(L.labels,{transform:'translate(120 955)'});
+  for(let i=0;i<4;i++)el('rect',{x:i*45,y:0,width:45,height:6,fill:i%2?'#f6ecd2':'#3a2a1c',stroke:'#3a2a1c','stroke-width':1},sb);
+  ['0','500','1000','1500','2000 米'].forEach((s,i)=>text(sb,i*45,18,s,'',{style:'font-size:9px;fill:#3a2a1c;stroke:#f3e8cb;stroke-width:2px'}));
+  // 题签（右侧竖排）
+  const[cx,cy]=[905,560];const c=g(L.labels,{transform:`translate(${cx} ${cy})`});
+  el('rect',{x:-34,y:-6,width:68,height:206,fill:'#f6ecd2',stroke:'#3a2a1c','stroke-width':2},c);
+  el('rect',{x:-29,y:-1,width:58,height:196,fill:'none',stroke:'#c2412b','stroke-width':1},c);
+  [...'京都名所'].forEach((ch,i)=>text(c,8,26+i*34,ch,'',{style:'font-size:28px;font-weight:800;fill:#3a2a1c;stroke:none'}));
+  [...'遊覧圖'].forEach((ch,i)=>text(c,-16,40+i*22,ch,'',{style:'font-size:15px;font-weight:700;fill:#c2412b;stroke:none'}));
+  el('rect',{x:-26,y:165,width:22,height:22,fill:'#c2412b'},c);
+  text(c,-15,175,'昭','',{style:'font-size:10px;fill:#f6ecd2;stroke:none;font-weight:800'});text(c,-15,185,'和','',{style:'font-size:10px;fill:#f6ecd2;stroke:none;font-weight:800'});
+})();
+
+/* ---------- 折痕与暗角 ---------- */
+const fold=g(world,{'pointer-events':'none'});
+[[W/3,0,W/3,H],[2*W/3,0,2*W/3,H],[0,H/2,W,H/2]].forEach(([a,b,c,d])=>{
+  el('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#fff8e6','stroke-width':2.2,opacity:.35},fold);
+  el('line',{x1:a+1.4,y1:b+(a===0?1.4:0),x2:c+1.4,y2:d+(a===0?1.4:0),stroke:'#6b4a28','stroke-width':.9,opacity:.18},fold);
+});
+el('rect',{x:-60,y:-60,width:W+120,height:H+120,fill:'url(#vign)'},fold);
+
+/* ---------- 已开放景点（朱印标记） ---------- */
+SITES.forEach(s=>{
+  const[x,y]=P(s.lon,s.lat);s.x=x;s.y=y;
+  const m=g(world,{class:'site-mk',transform:`translate(${x} ${y})`,'data-id':s.id,tabindex:0,role:'button','aria-label':s.cn});
+  el('circle',{class:'ring',r:16,fill:'none',stroke:'#c2412b','stroke-width':3},m);
+  el('ellipse',{cx:2,cy:3,rx:15,ry:6,fill:'rgba(58,42,28,.35)'},m);
+  el('circle',{class:'disc',r:14,fill:'#c2412b',stroke:'#fff6e4','stroke-width':2.5},m);
+  el('circle',{r:16.5,fill:'none',stroke:'#7a1f12','stroke-width':1},m);
+  text(m,0,5.5,s.no,'',{style:'font-size:15px;font-weight:800;fill:#fff6e4;stroke:none'});
+  const left=s.id==='rokkakudo';
+  const f=g(m,{class:'flag',transform:`translate(${left?-22:22} -14)`});
+  const tw=s.name.length*17+18;
+  el('rect',{x:left?-tw:0,y:-13,width:tw,height:26,fill:'#c2412b',stroke:'#3a2a1c','stroke-width':1.6},f);
+  el('rect',{x:(left?-tw:0)+3,y:-10,width:tw-6,height:20,fill:'none',stroke:'#f6ecd2','stroke-width':.8},f);
+  text(f,left?-tw/2:tw/2,6,s.name,'',{style:'font-size:16px;font-weight:800;fill:#fff6e4;stroke:none;letter-spacing:2px'});
+  el('path',{d:left?'M-22 14 L-8 0':'M22 14 L8 0',stroke:'#3a2a1c','stroke-width':1.4},m).setAttribute('transform',`translate(${left?22:-22} -14)`);
+  m.addEventListener('click',e=>{e.stopPropagation();openCard(s)});
+  m.addEventListener('keydown',e=>{if(e.key==='Enter')openCard(s)});
+});
+
+/* ===================== 侧栏内容 ===================== */
+const list=document.getElementById('siteList');
+SITES.forEach(s=>{
+  const b=document.createElement('button');b.className='site';
+  b.innerHTML=`<span class="no">${s.no}</span><span><b>${s.name}</b><small>${s.cn.includes('·')?s.cn.split('·')[1].trim()+' · ':''}${s.addr.split(/[0-9一二三四五六七八九十]/)[0].slice(0,6)}</small></span>`;
+  b.onclick=()=>{flyTo(s.x,s.y,480,()=>openCard(s));if(innerWidth<=760)side.classList.remove('open')};
+  list.appendChild(b);
+});
+document.getElementById('soonList').innerHTML=SOON.map(n=>`<span>${n}</span>`).join('')+'<br>后续新景点完成后会在地图上盖上新的朱印。';
+document.getElementById('legend').innerHTML=[
+  ['<svg width="34" height="18"><circle cx="17" cy="9" r="7.5" fill="#c2412b" stroke="#fff6e4" stroke-width="1.5"/></svg>','3D 导览景点'],
+  ['<svg width="34" height="10"><path d="M2 5h30" stroke="#6b4f35" stroke-width="4.6"/><path d="M2 5h30" stroke="#f6ead0" stroke-width="3"/><path d="M2 5h30" stroke="#c2412b" stroke-dasharray="4 2.5"/></svg>','主干道 · 市电'],
+  ['<svg width="34" height="10"><path d="M2 5h30" stroke="#2b2016" stroke-width="3.6"/><path d="M2 5h30" stroke="#f6eedb" stroke-width="2" stroke-dasharray="7 7"/></svg>','铁道'],
+  ['<svg width="34" height="10"><path d="M2 5h30" stroke="#4d7f8f" stroke-width="8"/><path d="M2 5h30" stroke="#8fbcc8" stroke-width="5.6"/></svg>','河川 · 疏水'],
+  ['<svg width="34" height="20" viewBox="-12 -12 24 20"><use href="#temple"/></svg>','寺院'],
+  ['<svg width="34" height="20" viewBox="-12 -12 24 22"><use href="#torii"/></svg>','神社'],
+].map(([i,t])=>i+'<span>'+t+'</span>').join('');
+
+/* ===================== 平移 / 缩放 ===================== */
+const wrap=document.getElementById('mapWrap');
+const FULL={x:-70,y:-70,w:W+140,h:H+140};
+let vb={...FULL};
+function minW(){return 160}
+function apply(){
+  svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const r=wrap.clientWidth/wrap.clientHeight, eff=Math.max(vb.w,vb.h*r);
+  svg.dataset.z=eff<520?3:eff<820?2:1;
+  if(!card.classList.contains('hidden')&&cur)placeCard(cur);
+}
+svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+function clamp(){
+  vb.w=Math.max(minW(),Math.min(FULL.w*1.6,vb.w));vb.h=vb.w*FULL.h/FULL.w;
+  const mx=FULL.x+FULL.w, my=FULL.y+FULL.h;
+  vb.x=Math.max(FULL.x-vb.w*.4,Math.min(mx-vb.w*.6,vb.x));vb.y=Math.max(FULL.y-vb.h*.4,Math.min(my-vb.h*.6,vb.y));
+}
+function toSvg(cx,cy){const pt=svg.createSVGPoint();pt.x=cx;pt.y=cy;return pt.matrixTransform(svg.getScreenCTM().inverse())}
+function toScreen(x,y){const pt=svg.createSVGPoint();pt.x=x;pt.y=y;const p=pt.matrixTransform(svg.getScreenCTM());const r=wrap.getBoundingClientRect();return{x:p.x-r.left,y:p.y-r.top}}
+function zoomAt(f,cx,cy){const p=toSvg(cx,cy);const nw=Math.max(minW(),Math.min(FULL.w*1.6,vb.w*f));const k=nw/vb.w;
+  vb.x=p.x-(p.x-vb.x)*k;vb.y=p.y-(p.y-vb.y)*k;vb.w=nw;vb.h=nw*FULL.h/FULL.w;clamp();apply()}
+let anim=null;
+function flyTo(x,y,w,done){
+  cancelAnimationFrame(anim);const a={...vb},b={w,h:w*FULL.h/FULL.w};b.x=x-b.w/2;b.y=y-b.h/2;
+  const t0=performance.now(),D=900;
+  (function step(t){let k=Math.min(1,(t-t0)/D);k=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    vb={x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,w:a.w+(b.w-a.w)*k,h:a.h+(b.h-a.h)*k};apply();
+    if(k<1)anim=requestAnimationFrame(step);else done&&done()})(t0);
+}
+wrap.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
+const ptrs=new Map();let last=null,moved=0,pinch0=null;
+wrap.addEventListener('pointerdown',e=>{if(e.target.closest('#card,#zoomBox'))return;wrap.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;
+  if(ptrs.size===1){last={x:e.clientX,y:e.clientY};wrap.classList.add('drag')}
+  if(ptrs.size===2){const[p,q]=[...ptrs.values()];pinch0={d:Math.hypot(p.x-q.x,p.y-q.y),w:vb.w}}});
+wrap.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===2&&pinch0){const[p,q]=[...ptrs.values()];const d=Math.hypot(p.x-q.x,p.y-q.y);zoomAt((pinch0.w*pinch0.d/d)/vb.w,(p.x+q.x)/2,(p.y+q.y)/2);moved+=10;return}
+  if(ptrs.size===1&&last){const a=toSvg(last.x,last.y),b=toSvg(e.clientX,e.clientY);vb.x-=b.x-a.x;vb.y-=b.y-a.y;moved+=Math.abs(e.clientX-last.x)+Math.abs(e.clientY-last.y);last={x:e.clientX,y:e.clientY};clamp();apply()}});
+function up(e){ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null;if(ptrs.size===1){const v=[...ptrs.values()][0];last={x:v.x,y:v.y}}if(!ptrs.size){last=null;wrap.classList.remove('drag')}}
+wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',up);
+// 拖动后不触发点击
+wrap.addEventListener('click',e=>{if(moved>6){e.stopPropagation();e.preventDefault();return}
+  if(!e.target.closest('#card,.site-mk'))closeCard()},true);
+document.getElementById('zIn').onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(.7,r.left+r.width/2,r.top+r.height/2)};
+document.getElementById('zOut').onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(1/.7,r.left+r.width/2,r.top+r.height/2)};
+document.getElementById('zReset').onclick=()=>{closeCard();flyTo(FULL.x+FULL.w/2,FULL.y+FULL.h/2,FULL.w)};
+addEventListener('resize',apply);
+
+/* ===================== 景点卡片 ===================== */
+const card=document.getElementById('card');let cur=null;
+function openCard(s){
+  cur=s;
+  card.innerHTML=`<div class="band"><span class="no">其${s.no}</span><h2>${s.name}</h2><span class="jp">${s.jp}</span><button class="x" aria-label="关闭">×</button></div>
+  <div class="cb"><div class="meta"><div><i>创建</i>${s.era}</div><div><i>所在</i>${s.addr}</div><div><i>交通</i>${s.access}</div></div>
+  <div class="desc">${s.desc.map(p=>'<p>'+p+'</p>').join('')}</div>
+  <div class="tags">${s.tags.map(t=>'<span>'+t+'</span>').join('')}</div>
+  <div class="acts"><button class="go">进入 3D 导览 ▸</button><button class="alt">新标签页</button></div></div>`;
+  card.querySelector('.x').onclick=closeCard;
+  card.querySelector('.go').onclick=()=>openScene(s);
+  card.querySelector('.alt').onclick=()=>window.open(s.href,'_blank','noopener');
+  card.classList.remove('hidden');placeCard(s);
+}
+function placeCard(s){
+  if(innerWidth<=760)return;
+  const p=toScreen(s.x,s.y),cw=card.offsetWidth,ch=card.offsetHeight,ww=wrap.clientWidth,wh=wrap.clientHeight;
+  const flagLeft=s.id==='rokkakudo'; // 卡片放在旗标的另一侧，避免遮住
+  let x=flagLeft?p.x+34:p.x-34-cw,y=p.y-ch/2;if(x<12)x=p.x+34+(flagLeft?0:s.name.length*17+40);if(x+cw>ww-12)x=p.x-34-cw;x=Math.max(12,Math.min(ww-cw-12,x));y=Math.max(12,Math.min(wh-ch-12,y));
+  card.style.left=x+'px';card.style.top=y+'px';
+}
+function closeCard(){card.classList.add('hidden');cur=null}
+
+/* ===================== 场景浏览层 ===================== */
+const viewer=document.getElementById('viewer'),vFrame=document.getElementById('vFrame');
+function openScene(s){
+  const p=toScreen(s.x,s.y),r=wrap.getBoundingClientRect();
+  viewer.style.setProperty('--cx',(p.x+r.left)+'px');viewer.style.setProperty('--cy',(p.y+r.top)+'px');
+  document.getElementById('vTitle').innerHTML=`${s.name}<small>${s.jp}</small>`;
+  document.getElementById('vOpen').href=s.href;
+  vFrame.src=s.href;viewer.classList.remove('hidden');
+  history.pushState({site:s.id},'','#'+s.id);
+}
+function closeScene(fromPop){viewer.classList.add('hidden');setTimeout(()=>{if(viewer.classList.contains('hidden'))vFrame.src='about:blank'},650);
+  if(!fromPop&&location.hash)history.back()}
+document.getElementById('vBack').onclick=()=>closeScene(false);
+addEventListener('popstate',()=>{const s=SITES.find(x=>'#'+x.id===location.hash);if(s){openCard(s);openScene(s)}else if(!viewer.classList.contains('hidden'))closeScene(true)});
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(!viewer.classList.contains('hidden'))closeScene(false);else closeCard()}});
+
+/* ===================== 窄屏侧栏 ===================== */
+const side=document.getElementById('side');
+document.getElementById('sideHead').onclick=()=>{if(innerWidth<=760)side.classList.toggle('open')};
+
+/* ===================== 启动 ===================== */
+if(innerWidth<=760){vb={x:150,y:120,w:720,h:720*FULL.h/FULL.w}}
+apply();
+setTimeout(()=>document.getElementById('hint').style.opacity=0,6000);
+{const s=SITES.find(x=>'#'+x.id===location.hash);if(s){history.replaceState(null,'',location.pathname);openCard(s);openScene(s)}}
+window.__kyotoMap={SITES,openCard,openScene,flyTo,closeScene};
+</script>
+</body>
+</html>
