@@ -769,7 +769,8 @@ function flyTo(x,y,w,done){
 }
 wrap.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(e.deltaY*.0015),e.clientX,e.clientY)},{passive:false});
 const ptrs=new Map();let last=null,moved=0,pinch0=null;
-wrap.addEventListener('pointerdown',e=>{if(e.target.closest('#card,#zoomBox'))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=0;
+wrap.addEventListener('pointerdown',e=>{moved=0; // 每次按下都清零，否则上一次拖动的距离会让卡片按钮的点击被拦截
+  if(e.target.closest('#card,#zoomBox'))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(ptrs.size===1){last={x:e.clientX,y:e.clientY};wrap.classList.add('drag')}
   if(ptrs.size===2){const[p,q]=[...ptrs.values()];pinch0={d:Math.hypot(p.x-q.x,p.y-q.y),w:vb.w}}});
 wrap.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -780,7 +781,8 @@ wrap.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.se
 function up(e){ptrs.delete(e.pointerId);if(ptrs.size<2)pinch0=null;if(ptrs.size===1){const v=[...ptrs.values()][0];last={x:v.x,y:v.y}}if(!ptrs.size){last=null;wrap.classList.remove('drag')}}
 wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',up);
 // 拖动后不触发点击
-wrap.addEventListener('click',e=>{if(moved>6){e.stopPropagation();e.preventDefault();return}
+wrap.addEventListener('click',e=>{if(e.target.closest('#card,#zoomBox'))return;
+  if(moved>6){e.stopPropagation();e.preventDefault();return}
   if(!e.target.closest('#card,.site-mk,.lmk'))closeCard()},true);
 document.getElementById('zIn').onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(.7,r.left+r.width/2,r.top+r.height/2)};
 document.getElementById('zOut').onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(1/.7,r.left+r.width/2,r.top+r.height/2)};
