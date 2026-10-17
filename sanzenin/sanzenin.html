@@ -162,11 +162,11 @@ $('#app').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.08, 6000);
-camera.position.set(-72,100,138);
+camera.position.set(-80,105,128);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
 controls.maxPolarAngle = PI*0.62; controls.minDistance = 0.3; controls.maxDistance = 1400;
-controls.target.set(55,4,40);
+controls.target.set(45,8,-4);
 
 const U = { uTime:{value:0}, uDusk:{value:0}, uSnow:{value:0} };
 
@@ -497,25 +497,34 @@ sun.target.position.set(0,0,0); scene.add(sun,sun.target);
 /* ---------------- site plan (x = east, z = south, metres; y up) ----------------
    三千院 sits on the east slope of the 大原 basin. The 三千院道 climbs north-east from the valley along the 呂川,
    then turns north beside the precinct's west 石垣 to the stone steps under the 御殿門 (facing west).
-   Inside: 客殿 with 聚碧園 to its south, the 宸殿 east of it, and the moss garden 有清園 falling gently south to the
-   往生極楽院 and its south gate 朱雀門. The 紫陽花苑 climbs the east slope to the 金色不動堂 and 観音堂; the 律川 runs
-   along the north side and the 呂川 along the south.  */
-const PREC={x0:-54,x1:120,z0:-46,z1:66};
-const TERRACE_Y=8, POND_Y=7.4, BENTEN_Y=5.6;
-const PONDS=[{id:'shuheki',x:-25,z:3,rx:7.5,rz:4.0,y:POND_Y},{id:'yusei',x:14,z:5,rx:8.5,rz:4.4,y:POND_Y},{id:'benten',x:62,z:49,rx:5.2,rz:3.6,y:BENTEN_Y}];
+   Layout and visiting order follow the temple's own precinct map (境内図, 箭头=順路):
+   御殿門 → 接待処 → 客殿 (聚碧園) → 宸殿 → 有清園 → 往生極楽院 → わらべ地蔵 (弁天池) → 弁財天 → 金色不動堂 → 観音堂
+   (小観音, 慈眼の庭) → 売炭翁石仏 across the 律川 → back down through the 紫陽花苑 → along the south side past the 朱雀門
+   and 円融房 → 円融蔵 → out by the 御殿門. The 律川 runs along the north side, the 呂川 along the south.  */
+const PREC={x0:-54,x1:126,z0:-46,z1:66};
+const TERRACE_Y=8, POND_Y=7.4, BENTEN_Y=6.5;
+const PONDS=[{id:'shuheki',x:-25,z:3,rx:7.5,rz:4.0,y:POND_Y},{id:'yusei',x:14,z:5,rx:8.5,rz:4.4,y:POND_Y},{id:'benten',x:50,z:30.5,rx:4.4,rz:2.9,y:BENTEN_Y}];
 const RITSU=[[170,-74],[130,-66],[95,-58],[60,-58],[25,-60],[-10,-58],[-45,-58],[-72,-52],[-100,-40],[-130,-22],[-170,0],[-230,26]];
 const RO=[[170,78],[130,76],[90,77],[50,78],[10,76],[-30,72],[-58,76],[-84,92],[-112,112],[-142,132],[-178,152],[-240,180]];
 const APPROACH=[[-186,150],[-160,130],[-132,111],[-106,93],[-86,74],[-72,56],[-66,40],[-64,22],[-64,8],[-67,-3],[-71,-10]];
 const STEPS={x0:-70,x1:-54,z0:-13.2,z1:-6.8};          // stone steps up to the 御殿門
-const EXIT_STEPS={x0:-64,x1:-54,z0:45.5,z1:50.5};      // exit steps beside the 円融蔵
+const FORE={x0:68,x1:93,z0:-0.5,z1:22};                 // gravel forecourt of the 金色不動堂
+const KSTEPS={x0:92.5,x1:102.5,z0:3,z1:7};               // stone steps up to the 観音堂
+const JIGEN={x:111,z:-25};                               // 慈眼の庭 (25 stone bodhisattvas)
+const BENZAI={x:64.8,z:36.2}, TORII={x:57.2,z:40.6};     // 弁財天 and its torii
+const BAITAN={x:64,z:-68.5};                             // 売炭翁石仏, across the 律川
+const BRIDGE={x:63.5,z0:-51.5,z1:-64.5};
 const PATHS=[
-  [[-54,-10],[-44,-10],[-36,-14],[-31,-15]],                                         // gate → 客殿 entrance
-  [[32,-14],[35,-6],[37,4],[36,14],[31,22],[30,32],[33,39],[38,40.5]],              // 宸殿 → 有清園 → 往生極楽院
-  [[38,40.5],[46,42.5],[54,44],[58,42],[66,40],[76,36],[88,32],[97,30]],            // → わらべ地蔵 / 弁天池 → 紫陽花苑 → 不動堂
-  [[98,24],[97,14],[100,4],[104,-3]],                                                 // → 観音堂
-  [[96,2],[86,10],[76,22],[66,30],[56,34],[47,38],[42,46],[38,49],[38,56],[30,61],[6,63],[-18,61],[-32,56],[-40,52],[-50,48],[-54,48]],  // descent → 朱雀門 → 円融蔵 → exit
+  [[-54,-10],[-47,-11.5],[-44,-19.5],[-38,-15],[-31,-15]],                                       // 御殿門 → 接待処 → 客殿
+  [[32,-14],[35,-6],[37,4],[36,14],[31,22],[30,32],[33,39],[38,40.5]],                          // 宸殿 → 有清園 → 往生極楽院
+  [[38,40.5],[44,41.5],[50,41.8],[57.2,40.6],[61.6,37.6]],                                       // → わらべ地蔵 → torii → 弁財天
+  [[61.6,37.6],[63.5,32],[66.5,25],[72,18],[78,10],[80,3.5]],                                    // → 金色不動堂
+  [[80,3.5],[88,5],[92.5,5],[102.5,5],[107.5,5]],                                                // → steps → 観音堂
+  [[107.5,5],[106,-5],[106.5,-15],[108,-22],[104,-31],[96,-36.5],[86,-40],[75,-43],[67,-46],[63.5,-50],[63.5,-65.5]],  // 慈眼の庭 → 売炭翁石仏
+  [[63.5,-50],[60,-44],[55,-34],[51,-22],[49,-10],[50,2],[53,14],[56.5,24],[57.6,32],[57.2,40.6]],                    // back through the 紫陽花苑
+  [[57.2,40.6],[58,48],[54,54.5],[44,58],[36,59],[24,59],[8,58],[-8,57],[-20,55.5],[-30,51],[-40,48.5],[-47,44],[-48,32],[-48,18],[-48,4],[-50,-5],[-54,-10]],  // south side → 円融蔵 → 御殿門
 ];
-const HALLS={kyakuden:{x:-20,z:-16,w:20,d:12},shinden:{x:18,z:-18,w:26,d:16},ojo:{x:38,z:30,w:7.2,d:9},fudo:{x:106,z:30,w:12,d:10},kannon:{x:108,z:-12,w:11,d:8},enyu:{x:-36,z:38,w:16,d:10}};
+const HALLS={kyakuden:{x:-20,z:-16,w:20,d:12},shinden:{x:18,z:-18,w:26,d:16},ojo:{x:38,z:30,w:7.2,d:9},fudo:{x:80,z:-6.5,w:12,d:10},kannon:{x:114.5,z:5,w:8,d:11},enyu:{x:-40,z:57.5,w:15,d:8},enyubo:{x:-10,z:46.5,w:14,d:7},uketsuke:{x:-44,z:-26,w:9,d:5.5}};
 function segDist(px,pz,ax,az,bx_,bz){ const vx=bx_-ax, vz=bz-az; const t=Math.max(0,Math.min(1,((px-ax)*vx+(pz-az)*vz)/(vx*vx+vz*vz))); return Math.hypot(px-ax-vx*t,pz-az-vz*t); }
 function polyDist(px,pz,P){ let d=1e9; for(let i=0;i<P.length-1;i++){ const q=segDist(px,pz,P[i][0],P[i][1],P[i+1][0],P[i+1][1]); if(q<d) d=q; } return d; }
 function polyNear(px,pz,P){ let d=1e9,cx=0,cz=0; for(let i=0;i<P.length-1;i++){ const [ax,az]=P[i],[bx_,bz]=P[i+1]; const vx=bx_-ax, vz=bz-az; const t=Math.max(0,Math.min(1,((px-ax)*vx+(pz-az)*vz)/(vx*vx+vz*vz))); const qx=ax+vx*t, qz=az+vz*t, q=Math.hypot(px-qx,pz-qz); if(q<d){ d=q; cx=qx; cz=qz; } } return [d,cx,cz]; }
@@ -531,7 +540,7 @@ function gNat(x,z){
   h+=0.5*Math.sin(x*0.07+z*0.05)+0.3*Math.sin(z*0.11-x*0.06);
   return h;
 }
-const yDesign=(x,z)=>TERRACE_Y-2*sm(0,60,z)+8*sm(66,100,x);
+const yDesign=(x,z)=>TERRACE_Y-2*sm(0,60,z)+5*sm(46,68,x)+6*sm(92.5,102.5,x);
 function precW(x,z){ if(x<PREC.x0) return 0; const dx=Math.max(0,x-PREC.x1), dz=Math.max(0,PREC.z0-z,z-PREC.z1); return sm(10,0,Math.hypot(dx,dz)); }
 const inPrec=(x,z,p=0)=>x>PREC.x0-p&&x<PREC.x1+p&&z>PREC.z0-p&&z<PREC.z1+p;
 const pondE=(P,x,z)=>Math.hypot((x-P.x)/P.rx,(z-P.z)/P.rz)/(1+0.07*Math.sin(Math.atan2(z-P.z,x-P.x)*3+P.x)+0.04*Math.sin(Math.atan2(z-P.z,x-P.x)*5));
@@ -547,7 +556,6 @@ function H(x,z){
   const w=precW(x,z); if(w>0) h=h+(yDesign(x,z)-h)*w;
   // stone steps
   if(x>STEPS.x0&&x<STEPS.x1&&z>STEPS.z0-0.5&&z<STEPS.z1+0.5){ const lo=gNat(STEPS.x0,-10)+0.05; h=lo+(TERRACE_Y-lo)*Math.max(0,Math.min(1,(x-STEPS.x0)/(STEPS.x1-STEPS.x0))); }
-  if(x>EXIT_STEPS.x0&&x<EXIT_STEPS.x1&&z>EXIT_STEPS.z0-0.5&&z<EXIT_STEPS.z1+0.5){ const lo=gNat(EXIT_STEPS.x0,48)+0.05, hi=yDesign(-54,48); h=lo+(hi-lo)*Math.max(0,Math.min(1,(x-EXIT_STEPS.x0)/(EXIT_STEPS.x1-EXIT_STEPS.x0))); }
   // ponds
   const pa=pondAt(x,z); if(pa){ const [P,e]=pa; const t=e<1?P.y-0.75+0.45*sm(0.15,1,e):P.y-0.12+(h-P.y+0.12)*sm(1,1.3,e); h=Math.min(h,t); }
   // 律川 / 呂川: stone-lined channels
@@ -557,9 +565,10 @@ function H(x,z){
 }
 const onPath=(x,z)=>{ let d=1e9; for(const P of PATHS) d=Math.min(d,polyDist(x,z,P)); return d; };
 function inHall(x,z,p=0){ for(const k in HALLS){ const b=HALLS[k]; if(Math.abs(x-b.x)<b.w/2+p&&Math.abs(z-b.z)<b.d/2+p) return k; } return null; }
-const inYusei=(x,z)=>x>-2&&x<70&&z>-6&&z<64;
+const inYusei=(x,z)=>x>-2&&x<62&&z>-6&&z<64&&!(x>44&&z<24);
 const inShuheki=(x,z)=>x>-52&&x<-4&&z>-8&&z<16;
-const inAjisai=(x,z)=>x>62&&x<118&&z>4&&z<64&&!(Math.abs(x-106)<9&&Math.abs(z-30)<8);
+const inAjisai=(x,z)=>x>44&&x<69&&z>-44&&z<25&&!(x<47&&z>-4);
+const inFore=(x,z)=>x>FORE.x0&&x<FORE.x1&&z>FORE.z0&&z<FORE.z1;
 // shops along the 三千院道
 const SHOPS=[];
 
@@ -583,8 +592,9 @@ const inVillage=(x,z)=>x<-96&&roadD(x,z)>12;
     else if(h<6&&roadD(x,z)<40){ k=7; c.copy(cGrass); }
     const hk=inHall(x,z,3); if(hk&&k===0&&!(hk==='ojo')){ k=2; c.copy(cSand); }
     if(k===0&&x<-4&&z<-7.5){ k=2; c.copy(cSand); }               // forecourt around 客殿 / 宸殿
+    if(k===0&&inFore(x,z)){ k=2; c.copy(cSand).multiplyScalar(0.93); }   // gravel court of the 金色不動堂
     const op=onPath(x,z); if(op<1.3&&inPrec(x,z,1)){ if(op<1.0){ k=1; c.copy(cPath); } else c.lerp(cPath,sm(1.3,1.0,op)*0.6); }
-    const rd=roadD(x,z); if(rd<3.2||(x>STEPS.x0-1&&x<STEPS.x1&&z>STEPS.z0&&z<STEPS.z1)||(x>EXIT_STEPS.x0-1&&x<EXIT_STEPS.x1&&z>EXIT_STEPS.z0&&z<EXIT_STEPS.z1)){ k=5; c.copy(cPave); }
+    const rd=roadD(x,z); if(rd<3.2||(x>STEPS.x0-1&&x<STEPS.x1&&z>STEPS.z0&&z<STEPS.z1)){ k=5; c.copy(cPave); }
     const ri=riverInfo(x,z); if(ri.d<ri.hw+0.7){ k=3; c.copy(cBed); }
     const pa=pondAt(x,z); if(pa&&pa[1]<1.06){ k=3; c.copy(cBed); }
     col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b; kind[i]=k;
@@ -805,23 +815,23 @@ function flushStone(){ const g=new THREE.BufferGeometry(); g.setAttribute('posit
 
 /* ---- the west 石垣 (穴太積) with the 御殿門, the stone steps and the 筋塀 on top ---- */
 {
-  const gaps=[[STEPS.z0,STEPS.z1],[EXIT_STEPS.z0,EXIT_STEPS.z1]];
+  const gaps=[[STEPS.z0,STEPS.z1]];
   let top=[],bot=[];
   for(let z=-58;z<=78.01;z+=1){ const inGap=gaps.some(([a,b])=>z>a-0.01&&z<b+0.01);
     if(inGap){ stoneFace(top,bot); top=[]; bot=[]; continue; }
     const yt=H(-53.6,z)+0.05, yb=H(-57.5,z)-0.5, hh=Math.max(0,yt-yb); top.push(new V3(-54,yt,z)); bot.push(new V3(-54-0.28*hh,yb,z)); }
   stoneFace(top,bot);
-  for(const G0 of [STEPS,EXIT_STEPS]){ for(const zz of [G0.z0,G0.z1]){ const t=[],b=[]; for(let x=G0.x0;x<=G0.x1+0.01;x+=1){ t.push(new V3(x,H(x,zz+(zz===G0.z0?0.4:-0.4))+0.05,zz)); b.push(new V3(x,gNat(x,zz)-0.6,zz)); } stoneFace(t,b); }
+  for(const G0 of [STEPS]){ for(const zz of [G0.z0,G0.z1]){ const t=[],b=[]; for(let x=G0.x0;x<=G0.x1+0.01;x+=1){ t.push(new V3(x,H(x,zz+(zz===G0.z0?0.4:-0.4))+0.05,zz)); b.push(new V3(x,gNat(x,zz)-0.6,zz)); } stoneFace(t,b); }
     const lo=H(G0.x0+0.2,(G0.z0+G0.z1)/2), hi=H(G0.x1-0.2,(G0.z0+G0.z1)/2), n=Math.round((hi-lo)/0.2);
     for(let i=0;i<n;i++){ const x0=G0.x0+(G0.x1-G0.x0)*i/n, x1=G0.x0+(G0.x1-G0.x0)*(i+1)/n, yy=lo+(hi-lo)*(i+1)/n; bx('granite',x0,x1+0.05,yy-0.5,yy,G0.z0,G0.z1); } }
   // 筋塀: ochre earthen wall with five white lines (the highest rank, for 門跡 temples) and a tiled coping
-  const walls=[[-46,STEPS.z0-0.2],[STEPS.z1+0.2,EXIT_STEPS.z0-0.2],[EXIT_STEPS.z1+0.2,66]];
+  const walls=[[-46,STEPS.z0-0.2],[STEPS.z1+0.2,66]];
   for(const [z0,z1] of walls){ const y=TERRACE_Y; const yb=Math.min(H(-52.9,z0),H(-52.9,z1),H(-52.9,(z0+z1)/2))-0.3, yt=Math.max(H(-52.9,z0),H(-52.9,z1))+2.3;
     bx('wallOchre',-53.3,-52.5,yb,yt,z0,z1); for(let k=0;k<5;k++) bx('white',-53.34,-53.28,yt-0.95+k*0.14,yt-0.9+k*0.14,z0,z1);
     bx('woodDark',-53.4,-52.4,yt,yt+0.12,z0,z1); const F=new THREE.Matrix4().makeBasis(new V3(0,0,1),new V3(0,1,0),new V3(-1,0,0)).setPosition(-52.9,0,(z0+z1)/2);
     frameRoof(F,(z1-z0)/2+0.1,0.75,yt+0.1,yt+0.55,'tile',{nu:Math.round((z1-z0)*1.2),th:0.12}); }
   // a north wall along the 律川 side and a south wall above the 呂川
-  for(const [x0,x1,z] of [[-53,60,-46],[-53,20,66]]){ const yb=Math.min(H(x0,z),H(x1,z))-0.3; for(let x=x0;x<x1;x+=8){ const xe=Math.min(x1,x+8), ya=Math.max(H(x,z),H(xe,z),H((x+xe)/2,z))+2.0, yl=Math.min(H(x,z),H(xe,z))-0.4;
+  for(const [x0,x1,z] of [[-53,60,-46],[-53,33,66],[39,63,66]]){ const yb=Math.min(H(x0,z),H(x1,z))-0.3; for(let x=x0;x<x1;x+=8){ const xe=Math.min(x1,x+8), ya=Math.max(H(x,z),H(xe,z),H((x+xe)/2,z))+2.0, yl=Math.min(H(x,z),H(xe,z))-0.4;
       bx('wallOchre',x,xe,yl,ya,z-0.4,z+0.4); bx('woodDark',x,xe,ya,ya+0.1,z-0.5,z+0.5); frameRoof(frm((x+xe)/2,0,z),(xe-x)/2+0.05,0.7,ya+0.08,ya+0.5,'tile',{nu:10,th:0.12}); } }
 }
 /* ---- 御殿門 ---- */
@@ -893,8 +903,8 @@ function boatHalo(g,h,w,y,z,mat){
   const geo=new THREE.ExtrudeGeometry(s,{depth:0.05,bevelEnabled:true,bevelSize:0.02,bevelThickness:0.02,bevelSegments:1,curveSegments:4});
   part(g,geo,mat,[0,y,z]);
 }
-function buddhaSeated(x,y,z,ry,s){
-  const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; g.scale.setScalar(s); scene.add(g); const mt=M.oldGold;
+function buddhaSeated(x,y,z,ry,s,mt=M.oldGold,hs='ojo'){
+  const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; g.scale.setScalar(s); scene.add(g);
   const top=lotusSeat(g,0.85,0,mt);
   part(g,G.sph,mt,[0,top+0.16,0.08],[0.78,0.24,0.5]);                              // crossed legs
   part(g,lathe([[0,0],[0.42,0],[0.46,0.15],[0.44,0.45],[0.47,0.66],[0.36,0.78],[0.13,0.84],[0.11,0.92],[0,0.92]],32),mt,[0,top+0.22,0],[1,1,0.72]);
@@ -908,7 +918,7 @@ function buddhaSeated(x,y,z,ry,s){
   boatHalo(g,3.0,2.0,0.75,-0.55,mt);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.03,6,40),mt); ring.position.set(0,hy,-0.48); g.add(ring);
   for(let i=0;i<11;i++){ const a=PI*0.1+i/10*PI*0.8; part(g,G.sph,mt,[Math.cos(a)*0.85,hy+Math.sin(a)*0.75-0.2,-0.46],[0.07,0.07,0.04]); }
-  g.traverse(o=>{ o.userData.hs='ojo'; }); return g;
+  g.traverse(o=>{ o.userData.hs=hs; }); return g;
 }
 function bodhisattvaKneel(x,y,z,ry,s,pose){
   const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; g.scale.setScalar(s); scene.add(g); const mt=M.oldGold;
@@ -952,49 +962,86 @@ function kannonStanding(x,y,z,ry,s){
   proxy('ojo',x-6,x+6,OJO_Y,OJO_Y+11,z-7,z+7);
 }
 /* ---- 朱雀門 (south gate of the 往生極楽院) and the hedge ---- */
-const SUZAKU={x:38,z:52.5};
+const SUZAKU={x:36,z:66};
 { const {x,z}=SUZAKU, y=H(x,z), F=frm(x,y,z,0);
   for(const sx of [-1.4,1.4]) for(const sz of [-0.9,0.9]) postF('woodNat',F,sx,sz,0,3.0,0.13);
   bxT('woodNat',F,-1.9,1.9,2.7,3.0,-1.05,-0.75); bxT('woodNat',F,-1.9,1.9,2.7,3.0,0.75,1.05); for(const sx of [-1.4,1.4]) bxT('woodNat',F,sx-0.1,sx+0.1,2.7,3.0,-1.05,1.05);
-  for(const s of [-1,1]){ const D=new THREE.Matrix4().makeRotationY(-s*1.2).setPosition(s*1.3,0,-0.9); D.premultiply(F); bxT('woodMid',D,s<0?0:-1.25,s<0?1.25:0,0.1,2.55,-0.04,0.04); }
+  for(const s of [-1,1]){ const D=new THREE.Matrix4().makeRotationY(0).setPosition(s*1.3,0,-0.1); D.premultiply(F); bxT('woodMid',D,s<0?0:-1.25,s<0?1.25:0,0.1,2.55,-0.04,0.04); }
   kirizuma(x,y+3.05,z,5.2,3.8,1.25,{b:'hiwada',th:0.3,nu:10,nv:6,rafters:12,raftV:0.85,sag:0.2,capKey:'shingleCap'});
   proxy('suzaku',x-2.6,x+2.6,y,y+5,z-2,z+2);
 }
-/* ---- 金色不動堂 (facing west) and 観音堂 (facing south) with the 小観音 galleries ---- */
+/* ---- 金色不動堂 (facing south over its gravel court) and 観音堂 (facing west) with the 小観音 halls ---- */
 const FUDO_Y=H(HALLS.fudo.x,HALLS.fudo.z);
-const FUDO=temple(HALLS.fudo.x,HALLS.fudo.z,FUDO_Y,HALLS.fudo.w,HALLS.fudo.d,{floor:1.0,ph:3.8,nx:5,nz:4,ev:1.4,walls:['plaster','plaster','plaster',['lattice','open','open','lattice']],alongZ:true,kumi:2,roof:'tile',ov:2.4,rise:6.0,stairs:{k:3,w:3.4,stone:true},dark:3,rail:true});
+const FUDO=temple(HALLS.fudo.x,HALLS.fudo.z,FUDO_Y,HALLS.fudo.w,HALLS.fudo.d,{floor:1.0,ph:3.8,nx:5,nz:4,ev:1.4,walls:[['lattice','open','open','open','lattice'],'plaster','plaster','plaster'],kumi:2,roof:'tile',ov:2.4,rise:6.0,stairs:{k:0,w:3.4,stone:true},dark:0,rail:true});
 { const {x,z}=HALLS.fudo, f=FUDO.f; // gilded 厨子 holding the hidden 金色不動明王
-  bx('lacquer',x+2.0,x+4.0,f,f+2.6,z-1.3,z+1.3); bx('goldF',x+1.94,x+2.0,f+0.2,f+2.4,z-1.1,z+1.1); bx('black',x+1.93,x+1.95,f+0.2,f+2.4,z-0.02,z+0.02);
-  for(const s of [-1,1]) bx('goldF',x+1.9,x+2.1,f+2.6,f+2.75,z-1.4,z+1.4);
-  for(const s of [-1,1]) mesh(G.cyl,M.bronze,[x+1.0,f+0.5,z+s*1.6],[0.12,1.0,0.12]);
-  for(const s of [-1,1]){ const p=new V3(x+HALLS.fudo.w/2*0+(-HALLS.fudo.w/2-2.4),FUDO.top-0.2,z+s*(HALLS.fudo.d/2+2.4)); }
-  proxy('fudo',x-8,x+8,FUDO_Y,FUDO_Y+13,z-8,z+8); }
+  bx('lacquer',x-1.3,x+1.3,f,f+2.6,z-4.0,z-2.0); bx('goldF',x-1.1,x+1.1,f+0.2,f+2.4,z-2.0,z-1.94); bx('black',x-0.02,x+0.02,f+0.2,f+2.4,z-1.95,z-1.93);
+  bx('goldF',x-1.4,x+1.4,f+2.6,f+2.75,z-4.1,z-1.9);
+  for(const s of [-1,1]) mesh(G.cyl,M.bronze,[x+s*1.6,f+0.5,z-1.0],[0.12,1.0,0.12]);
+  proxy('fudo',x-8,x+8,FUDO_Y,FUDO_Y+13,z-7,z+9); }
+// a small stone 層塔 at the edge of the court
+{ const x=95.5, z=15.5, y=H(x,z); bx('granite',x-0.7,x+0.7,y-0.4,y+0.5,z-0.7,z+0.7); let yy=y+0.5;
+  for(let i=0;i<7;i++){ const r=0.95-i*0.07; bx('granite',x-0.32+i*0.02,x+0.32-i*0.02,yy,yy+0.3,z-0.32+i*0.02,z+0.32-i*0.02); yy+=0.3; mesh(new THREE.CylinderGeometry(r*0.6,r*0.95,0.16,4,1),M.stone,[x,yy+0.08,z],[1,1,1],[0,PI/4,0]); yy+=0.16; }
+  mesh(new THREE.ConeGeometry(0.12,0.6,8),M.stone,[x,yy+0.3,z]); }
+// stone steps from the court up to the 観音堂 terrace
+{ const n=26; for(let i=0;i<n;i++){ const x0=KSTEPS.x0+(KSTEPS.x1-KSTEPS.x0)*i/n, x1=KSTEPS.x0+(KSTEPS.x1-KSTEPS.x0)*(i+1)/n, yy=H(x1,5)+0.02; bx('granite',x0,x1+0.05,yy-0.6,yy,KSTEPS.z0,KSTEPS.z1); }
+  for(const zz of [KSTEPS.z0-0.25,KSTEPS.z1+0.25]) for(let i=0;i<n;i+=2){ const xx=KSTEPS.x0+(KSTEPS.x1-KSTEPS.x0)*(i+1)/n; bx('granite',xx-0.4,xx+0.4,H(xx,zz)-0.3,H(xx,5)+0.25,zz-0.25,zz+0.25); } }
 const KANNON_Y=H(HALLS.kannon.x,HALLS.kannon.z);
-const KANNON=temple(HALLS.kannon.x,HALLS.kannon.z,KANNON_Y,HALLS.kannon.w,HALLS.kannon.d,{floor:1.0,ph:4.4,nx:4,nz:3,ev:1.3,walls:[['lattice','open','open','lattice'],'plaster','plaster','plaster'],kumi:2,roof:'tile',ov:2.3,rise:5.6,stairs:{k:0,w:3.0,stone:true},dark:0});
-kannonStanding(HALLS.kannon.x,KANNON.f+0.05,HALLS.kannon.z-1.6,0,1.05);
-proxy('kannon',HALLS.kannon.x-7,HALLS.kannon.x+7,KANNON_Y,KANNON_Y+13,HALLS.kannon.z-6,HALLS.kannon.z+7);
-// 小観音: galleries of small gilded Kannon offered by visitors
-const KOKAN=[]; let kokanMesh;
-{ for(const gx of [96.5,119.5]){ const z=HALLS.kannon.z, y=H(gx,z), F=frm(gx,y,z,0);
+const KANNON=temple(HALLS.kannon.x,HALLS.kannon.z,KANNON_Y,HALLS.kannon.w,HALLS.kannon.d,{floor:1.0,ph:4.4,nx:3,nz:4,ev:1.3,walls:['plaster','plaster','plaster',['lattice','open','open','lattice']],alongZ:true,kumi:2,roof:'tile',ov:2.3,rise:5.6,stairs:{k:3,w:3.0,stone:true},dark:3});
+kannonStanding(HALLS.kannon.x+1.6,KANNON.f+0.05,HALLS.kannon.z,-PI/2,1.05);
+proxy('kannon',HALLS.kannon.x-7,HALLS.kannon.x+7,KANNON_Y,KANNON_Y+13,HALLS.kannon.z-7,HALLS.kannon.z+7);
+// 小観音: halls on either side filled with small gilded Kannon offered by visitors (they face west, like the hall)
+const KOKAN=[], KF=[]; let kokanMesh;
+{ for(const gz of [HALLS.kannon.z-11.5,HALLS.kannon.z+11.5]){ const gx=HALLS.kannon.x+0.5, y=H(gx,gz), F=frm(gx,y,gz,-PI/2); KF.push(F);
     bxT('granite',F,-2.6,2.6,-1.5,0.2,-3.2,3.2); bxT('woodNat',F,-2.4,2.4,0.2,0.35,-3,3);
     for(const sx of [-2.3,2.3]) for(const sz of [-2.9,2.9]) postF('woodNat',F,sx,sz,0.2,3.4,0.1);
     bxT('interior',F,-2.3,2.3,0.35,3.2,-2.9,-2.8); for(const sx of [-1,1]) bxT('plaster',F,sx*2.3-0.05,sx*2.3+0.05,0.35,3.2,-2.9,2.9);
-    for(let t=0;t<6;t++){ const yy=0.5+t*0.42, zz=-2.6+t*0.0; bxT('woodDark',F,-2.2,2.2,yy-0.06,yy,-2.75,-2.75+1.6-t*0.22); for(let xx=-2.05;xx<2.1;xx+=0.13) for(let r=0;r<Math.max(1,6-t);r++) KOKAN.push([gx+xx,y+yy,z-2.65+r*0.22+0.0]); }
+    for(let t=0;t<6;t++){ const yy=0.5+t*0.42; bxT('woodDark',F,-2.2,2.2,yy-0.06,yy,-2.75,-2.75+1.6-t*0.22); for(let xx=-2.05;xx<2.1;xx+=0.13) for(let r=0;r<Math.max(1,6-t);r++) KOKAN.push(tp(F,xx,yy,-2.65+r*0.22).toArray()); }
     frameRoof(F,3.0,3.8,3.5,4.9,'tile',{nu:8,th:0.22}); }
   const geo=mergeGeometries([new THREE.CylinderGeometry(0.02,0.035,0.11,6).translate(0,0.055,0).toNonIndexed(),new THREE.SphereGeometry(0.02,6,4).translate(0,0.125,0).toNonIndexed(),new THREE.CylinderGeometry(0.035,0.035,0.01,6,1).rotateX(PI/2).translate(0,0.11,-0.02).toNonIndexed()].map(g=>{ delete g.attributes.uv; return g; }));
+  geo.rotateY(-PI/2);
   kokanMesh=new THREE.InstancedMesh(geo,M.gold,KOKAN.length+200); kokanMesh.count=KOKAN.length;
   KOKAN.forEach((p,i)=>{ _m.makeTranslation(p[0],p[1],p[2]); kokanMesh.setMatrixAt(i,_m); }); kokanMesh.castShadow=false; kokanMesh.receiveShadow=true; scene.add(kokanMesh); }
+/* ---- 慈眼の庭: twenty-five stone bodhisattvas on the moss north of the 観音堂 ---- */
+const JIGEN_N=[];
+{ const parts=[new THREE.CylinderGeometry(0.1,0.17,0.5,10).translate(0,0.25,0),new THREE.SphereGeometry(0.1,10,8).translate(0,0.6,0),new THREE.CylinderGeometry(0.2,0.24,0.1,10).translate(0,0.0,0),
+    new THREE.CylinderGeometry(0.17,0.17,0.02,14).rotateX(PI/2).translate(0,0.62,-0.09)].map(g=>{ g=g.toNonIndexed(); delete g.attributes.uv; return g; });
+  const geo=mergeGeometries(parts); const items=[];
+  for(let i=0;i<25;i++){ const row=i<9?0:i<17?1:2, k=row===0?i:row===1?i-9:i-17, n=row===0?9:8, a=-0.9+1.8*(k+0.5)/n;
+    const r=6.5+row*2.6, x=JIGEN.x+Math.sin(a)*r*0.6+row*1.4, z=JIGEN.z+Math.cos(a)*r*0.85-4; const s=R(0.95,1.15)*(row===1&&k===3?1.5:1);
+    items.push({p:[x,H(x,z)+0.04,z],r:[0,-PI/2+R(-0.25,0.25),0],s:[s,s,s]}); JIGEN_N.push([x,z]); }
+  const im=makeInst(geo,M.jizo,items); im.traverse?.(o=>{ o.userData.hs='kannon'; }); }
+/* ---- 売炭翁石仏: the big Kamakura-period stone Amida across the 律川 ---- */
+{ const {x,z}=BAITAN, y=H(x,z);
+  for(const [dx,dz,s] of [[0,0,2.6],[-1.6,0.8,1.2],[1.7,0.5,1.0]]) rock(x+dx,z+dz,s,0.5,y-0.6);
+  buddhaSeated(x,y+0.55,z,0,1.25,M.jizo,'sekibutsu');
+  proxy('sekibutsu',x-2,x+2,y,y+4,z-2,z+2); }
+// a granite slab bridge over the 律川
+{ const yb=gNat(BRIDGE.x,-58)-0.35; beam('granite',new V3(BRIDGE.x,yb,BRIDGE.z0),new V3(BRIDGE.x,yb,BRIDGE.z1),1.8,0.3); }
 let kokanAdded=0;
-function offerKannon(){ if(kokanAdded>=200){ toast('小观音堂已经摆满了'); return; } const i=KOKAN.length+kokanAdded; const t=kokanAdded%34; const x=96.5-2.05+t*0.13, y=H(96.5,HALLS.kannon.z)+0.5+5*0.42+0.42*Math.floor(kokanAdded/34)*0+0.0; _m.makeTranslation(x,y+0.42,HALLS.kannon.z-2.65+Math.floor(kokanAdded/34)*0.22); kokanMesh.setMatrixAt(i,_m); kokanAdded++; kokanMesh.count=i+1; kokanMesh.instanceMatrix.needsUpdate=true; rin(); toast(`又一尊小观音被供奉在小观音堂里（第 ${KOKAN.length+kokanAdded} 尊）`); flyTo({p:[96.5,y+1.3,HALLS.kannon.z+1.5],t:[96.5,y+0.6,HALLS.kannon.z-2.6]}); }
+function offerKannon(){ if(kokanAdded>=200){ toast('小观音堂已经摆满了'); return; } const i=KOKAN.length+kokanAdded; const t=kokanAdded%34, F=KF[1];
+  const p=tp(F,-2.05+t*0.13,0.5+6*0.42,-2.65+Math.floor(kokanAdded/34)*0.22); _m.makeTranslation(p.x,p.y,p.z); kokanMesh.setMatrixAt(i,_m); kokanAdded++; kokanMesh.count=i+1; kokanMesh.instanceMatrix.needsUpdate=true; rin();
+  toast(`又一尊小观音被供奉在小观音堂里（第 ${KOKAN.length+kokanAdded} 尊）`); flyTo({p:tp(F,0.2,1.75,1.6).toArray(),t:tp(F,0,1.6,-2.4).toArray()}); }
 /* ---- 円融蔵 (treasure house, 2006) ---- */
-const ENYU=temple(HALLS.enyu.x,HALLS.enyu.z,H(HALLS.enyu.x,HALLS.enyu.z),HALLS.enyu.w,HALLS.enyu.d,{floor:0.45,ph:4.0,nx:5,nz:3,ev:0.7,walls:[['plaster','plaster','doors','plaster','plaster'],'plaster','plaster','plaster'],roof:'tile',ov:1.6,rise:4.6,key:'woodDark'});
+const ENYU=temple(HALLS.enyu.x,HALLS.enyu.z,H(HALLS.enyu.x,HALLS.enyu.z),HALLS.enyu.w,HALLS.enyu.d,{floor:0.45,ph:4.0,nx:5,nz:3,ev:0.7,walls:['plaster','plaster',['plaster','plaster','doors','plaster','plaster'],'plaster'],roof:'tile',ov:1.6,rise:4.6,key:'woodDark'});
 proxy('enyu',HALLS.enyu.x-9,HALLS.enyu.x+9,ENYU.f-1,ENYU.top,HALLS.enyu.z-6,HALLS.enyu.z+6);
-/* ---- 弁天池: a little vermilion shrine and a stone bridge ---- */
-{ const P=PONDS[2]; const x=P.x+1.4, z=P.z-0.8, y=BENTEN_Y+0.35;
-  bx('granite',x-0.9,x+0.9,BENTEN_Y-0.6,y,z-0.7,z+0.7); const F=frm(x,y,z,-0.5);
-  bxT('shu',F,-0.35,0.35,0,0.75,-0.3,0.3); bxT('black',F,-0.25,0.25,0.15,0.6,0.29,0.31); frameRoof(F,0.55,0.5,0.75,1.05,'hiwada',{nu:4,th:0.08});
-  for(let i=0;i<3;i++) bx('granite',P.x-P.rx-0.4+i*0.0,P.x-P.rx+0.6+i*0.0,BENTEN_Y-0.3,BENTEN_Y+0.12+i*0.0,P.z-0.4+i*0.9-0.9,P.z+0.4+i*0.9-0.9);
-  proxy('benten',P.x-P.rx,P.x+P.rx,BENTEN_Y-0.5,BENTEN_Y+2,P.z-P.rz,P.z+P.rz); }
+/* ---- 円融房 and the 接待処 ---- */
+temple(HALLS.enyubo.x,HALLS.enyubo.z,H(HALLS.enyubo.x,HALLS.enyubo.z),HALLS.enyubo.w,HALLS.enyubo.d,{floor:0.6,ph:2.9,nx:6,nz:3,ev:1.2,walls:[['shoji','shoji','shoji','shoji','shoji','shoji'],'plaster','plaster','plaster'],roof:'shingle',ov:1.8,rise:4.0,dark:0});
+proxy('enyu',HALLS.enyubo.x-8,HALLS.enyubo.x+8,H(HALLS.enyubo.x,HALLS.enyubo.z),H(HALLS.enyubo.x,HALLS.enyubo.z)+8,HALLS.enyubo.z-5,HALLS.enyubo.z+5);
+temple(HALLS.uketsuke.x,HALLS.uketsuke.z,TERRACE_Y,HALLS.uketsuke.w,HALLS.uketsuke.d,{floor:0.45,ph:2.6,nx:4,nz:2,ev:0.9,walls:[['shoji','open','open','shoji'],'plaster','plaster','plaster'],roof:'tile',ov:1.5,rise:3.2,dark:0});
+proxy('gate',HALLS.uketsuke.x-5,HALLS.uketsuke.x+5,TERRACE_Y,TERRACE_Y+6,HALLS.uketsuke.z-3.5,HALLS.uketsuke.z+3.5);
+/* ---- 弁財天: a vermilion shrine up a few stone steps from its torii ---- */
+{ const {x,z}=BENZAI, y=H(x,z)+0.3, F=frm(x,y,z,-PI/2);
+  bxT('granite',F,-1.6,1.6,-1.2,0.0,-1.4,1.4); bxT('granite',F,-1.3,1.3,0.0,0.25,-1.1,1.1);
+  bxT('shu',F,-0.75,0.75,0.25,1.6,-0.7,0.6); bxT('black',F,-0.55,0.55,0.4,1.35,0.59,0.61); bxT('goldF',F,-0.3,0.3,1.0,1.12,0.61,0.63);
+  frameRoof(F,1.05,1.1,1.6,2.25,'hiwada',{nu:6,th:0.1});
+  for(const sx of [-1.3,1.3]) postF('shu',F,sx,1.25,0.25,1.4,0.05);
+  proxy('benten',x-2,x+2,y-0.5,y+2.6,z-2,z+2); }
+{ const {x,z}=TORII, a=Math.atan2(61.6-57.2,37.6-40.6), y=H(x,z), F=frm(x,y,z,a);    // 明神鳥居 across the path
+  for(const sx of [-1.15,1.15]) postF('shu',F,sx,0,-0.2,2.9,0.11);
+  bxT('shu',F,-1.6,1.6,2.85,3.05,-0.13,0.13); bxT('black',F,-1.75,1.75,3.05,3.22,-0.16,0.16); bxT('shu',F,-1.35,1.35,2.35,2.48,-0.08,0.08);
+  // stone steps up to the shrine
+  const A=[57.6,40.2], B=[61.6,37.6], n=9, dx=(B[0]-A[0])/n, dz=(B[1]-A[1])/n, ang=Math.atan2(dx,dz);
+  for(let i=0;i<n;i++){ const cx=A[0]+dx*(i+0.5), cz=A[1]+dz*(i+0.5), yy=H(A[0]+dx*(i+1),A[1]+dz*(i+1))+0.02, S=frm(cx,0,cz,ang); bxT('granite',S,-1.1,1.1,yy-0.5,yy,-0.27,0.27); } }
 /* ---- shops along the 三千院道 ---- */
 function pathAt(P,s){ let acc=0; for(let i=0;i<P.length-1;i++){ const [ax,az]=P[i],[bx_,bz]=P[i+1], L=Math.hypot(bx_-ax,bz-az); if(acc+L>=s){ const t=(s-acc)/L; return {x:ax+(bx_-ax)*t,z:az+(bz-az)*t,dx:(bx_-ax)/L,dz:(bz-az)/L}; } acc+=L; } const n=P.length-1; return {x:P[n][0],z:P[n][1],dx:0,dz:-1}; }
 function shop(x,z,ry,o={}){
@@ -1034,10 +1081,10 @@ function yukimi(x,z,s=1){ const y=H(x,z), g=new THREE.Group(); g.position.set(x,
   for(let i=0;i<3;i++){ const a=i/3*6.28; const m=new THREE.Mesh(G.cyl,M.stone); m.scale.set(0.06,0.6,0.06); m.position.set(Math.cos(a)*0.32,0.3,Math.sin(a)*0.32); m.rotation.z=Math.cos(a)*0.25; m.rotation.x=-Math.sin(a)*0.25; add(m,g); }
   const b=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.32,6),M.stone); b.position.y=0.75; add(b,g); const w=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.24,6),M.lanternGlow); w.position.y=0.75; w.scale.set(1.3,1,1.3); add(w,g);
   const c=new THREE.Mesh(new THREE.ConeGeometry(0.85,0.36,6),M.stone); c.position.y=1.08; add(c,g); const k=new THREE.Mesh(G.sph,M.stone); k.scale.setScalar(0.08); k.position.y=1.3; add(k,g); }
-for(const [x,z,s,l] of [[-36,-8,1.1,true],[-8,-6,1.0,false],[28,14,1.1,true],[33,36,1.0,true],[44,36,0.95,true],[95,25,1.55,true],[95,35,1.55,true],[102,-0.5,1.3,true],[114,-0.5,1.3,true],[-60,30,1.2,true],[-62,-18,1.3,true],[-60,4,1.2,false],[60,58,1,false],[74,44,1,true],[86,34,1,false]]) lantern(x,z,s,l);
-yukimi(-18,8.8,1.1); yukimi(20.5,9.6,1.0); yukimi(55.2,53.8,0.9);
+for(const [x,z,s,l] of [[-36,-8,1.1,true],[-8,-6,1.0,false],[28,14,1.1,true],[33,36,1.0,true],[44,36,0.95,true],[74,8,1.55,true],[86,8,1.55,true],[106,0.4,1.2,true],[106,9.6,1.2,true],[-60,30,1.2,true],[-62,-18,1.3,true],[-60,4,1.2,false],[60,58,1,false],[74,44,1,true],[86,34,1,false]]) lantern(x,z,s,l);
+yukimi(-18,8.8,1.1); yukimi(20.5,9.6,1.0); yukimi(46.2,26.6,0.9);
 // 駒札 (notice boards)
-for(const [x,z,ry] of [[-66,-15,1.4],[-58,-5,-1.5],[42,44,0.3],[43.5,41.6,-0.4],[93,26.4,1.3],[102,2,0.1],[44,57,0.2],[-30,48,0.6],[-118,104,0.9]]){ const y=H(x,z), F=frm(x,y,z,ry); for(const s of [-0.38,0.38]) bxT('woodDark',F,s-0.04,s+0.04,0,1.6,-0.04,0.04); bxT('white',F,-0.45,0.45,0.75,1.55,0.04,0.06); bxT('woodMid',F,-0.5,0.5,0.7,1.6,-0.02,0.04); bxT('roofDark',F,-0.62,0.62,1.6,1.68,-0.18,0.2); for(let k=0;k<5;k++) bxT('black',F,-0.36,0.36,1.42-k*0.13,1.45-k*0.13,0.06,0.065); }
+for(const [x,z,ry] of [[-66,-15,1.4],[-58,-5,-1.5],[42,44,0.3],[43.5,44.2,-0.4],[70,13.5,1.0],[105.5,-9.5,1.2],[44,61.5,0.2],[-28,46.5,0.4],[-118,104,0.9]]){ const y=H(x,z), F=frm(x,y,z,ry); for(const s of [-0.38,0.38]) bxT('woodDark',F,s-0.04,s+0.04,0,1.6,-0.04,0.04); bxT('white',F,-0.45,0.45,0.75,1.55,0.04,0.06); bxT('woodMid',F,-0.5,0.5,0.7,1.6,-0.02,0.04); bxT('roofDark',F,-0.62,0.62,1.6,1.68,-0.18,0.2); for(let k=0;k<5;k++) bxT('black',F,-0.36,0.36,1.42-k*0.13,1.45-k*0.13,0.06,0.065); }
 /* ---- 大原 village: thatched farmhouses among the paddies ---- */
 const FARMS=[];
 for(let i=0;i<400&&FARMS.length<14;i++){ const x=R(-420,-110), z=R(-160,260); if(!inVillage(x,z)||H(x,z)>3||roadD(x,z)<18||riverInfo(x,z).d<14) continue; if(FARMS.some(f=>Math.hypot(f.x-x,f.z-z)<40)) continue; FARMS.push({x,z});
@@ -1048,14 +1095,14 @@ for(let i=0;i<400&&FARMS.length<14;i++){ const x=R(-420,-110), z=R(-160,260); if
 
 /* ================= HOTSPOTS (defined before the planting so every view stays clear) ================= */
 const E=(x,h,z)=>[x,H(x,z)+h,z];
-const JIZO={x:51,z:37.5};
+const JIZO={x:51,z:37.5}, BZ_Y=H(BENZAI.x,BENZAI.z);
 const HS=[
  {id:'sando',name:'三千院道·吕川',jp:'三千院道 · 呂川',marker:[-100,6,82],view:{p:E(-138,1.65,118),t:[-96,4,84]},
   text:`<p>从大原的巴士站往东北走，参道沿着一条叫“吕川”的小溪缓缓上坡，步行约10分钟到三千院。两旁是卖紫苏腌菜（柴渍）、各色渍物、抹茶甜点和土产的老铺，店头摆着一桶桶腌菜。</p>
   <p>大原是京都东北方向的山间盆地，自古是隐遁与修行之地。三千院南北各有一条小溪：南边的<b>吕川</b>与北边的<b>律川</b>，名字取自天台声明（佛教唱诵）的音律术语“吕”与“律”。大原是声明的修行中心，别称“鱼山”；日语形容口齿不清的“ろれつが回らない”（吕律不通），据说就源于此。</p>
   <p>点一下溪水可以看到涟漪。</p>`},
  {id:'gate',name:'御殿门',jp:'御殿門 · 穴太積の石垣',marker:[GATE.x,TERRACE_Y+9.5,GATE.z],view:{p:E(-80,1.65,-7),t:[-54,9.5,-10]},
-  text:`<p>三千院的正门。门前高大的石垣出自近江坂本的“穴太众”之手：他们是以堆砌城郭石墙闻名的石匠集团，石块基本不加切割，按天然形状层层咬合，叫“穴太积”。石垣与门楼让三千院看上去像一座城郭，也显出“门迹寺院”（由皇族或摄关家子弟出任住持的寺院）的格调。</p>
+  text:`<p>三千院的正门。门前高大的石垣出自近江坂本的“穴太众”之手：他们是以堆砌城郭石墙闻名的石匠集团，石块基本不加切割，按天然形状层层咬合，叫“穴太积”。石垣与门楼让三千院看上去像一座城郭，也显出“门迹寺院”（由皇族或摄关家子弟出任住持的寺院）的格调。进门后左手边是接待处，在这里买票，然后脱鞋进入客殿。</p>
   <p>门两侧土塀上的五条白线叫“筋塀”，五条是最高的等级，用于与皇室渊源深厚的寺院。</p>
   <p>三千院是天台宗三门迹之一（另两座是青莲院、妙法院），起源可追溯到传教大师最澄在比叡山东塔南谷所建的“圆融房”。此后几经迁移，明治时代以大原的“政所”为本坊，才正式称为“三千院”，名称取自梶井门迹的持佛堂“一念三千院”。</p>`},
  {id:'kyakuden',name:'客殿·聚碧园',jp:'客殿 · 聚碧園',marker:[-25,TERRACE_Y+3.2,3],view:{p:[-21.2,KYAKU.f+1.0,-13.6],t:[-24.5,TERRACE_Y+0.2,6]},
@@ -1070,31 +1117,31 @@ const HS=[
  {id:'ojo',name:'往生极乐院',jp:'往生極楽院 · 阿弥陀三尊（国宝）',marker:[HALLS.ojo.x,OJO.top+1.6,HALLS.ojo.z],view:{p:E(38.6,2.0,48),t:[38,OJO.f+2.4,29]},
   text:`<p>苔庭深处这座小小的阿弥陀堂，是三千院最古老的建筑，平安时代末期创建，为重要文化财，屋顶是桧皮葺的入母屋造，入口开在山墙一侧（妻入）。寺传说是惠心僧都源信所建，一般认为是12世纪后半叶真如房尼为亡夫所建。</p>
   <p>堂内的阿弥陀三尊像是国宝：中央的阿弥陀如来结来迎印，左右的观音菩萨（双手捧莲台）与势至菩萨（合掌）上身前倾、跪坐，称为“大和坐”，像是正要起身迎接往生者。据像内墨书，造于1148年（久安4年）。为了容下高大的佛像，堂内顶棚做成中间隆起的“船底天井”，原本绘满极彩色的天女与菩萨。</p>`,acts:[['进入堂内看船底天井',()=>enterOjo()],['复原天井的彩绘',()=>toggleRestore()]]},
- {id:'jizo',name:'童地藏',jp:'わらべ地蔵',marker:[JIZO.x,H(JIZO.x,JIZO.z)+2.2,JIZO.z],view:{p:E(49.3,0.8,39.9),t:[JIZO.x,H(JIZO.x,JIZO.z)+0.25,JIZO.z]},
-  text:`<p>往生极乐院旁的苔地上，散落着几尊小小的石地藏：有的趴在苔上托着腮，有的并肩而坐，有的双手合十，脸上都带着微笑，这就是“童地藏”（わらべ地蔵），出自石雕家杉村孝之手。</p>
-  <p>青苔慢慢爬上它们的头和肩膀，像是从苔庭里长出来的一样，是三千院最受欢迎的拍照点之一。</p>`,acts:[['和童地藏打招呼',()=>{ jizoWave=2.5; toast('童地藏好像笑得更开心了'); chime(); }]]},
- {id:'benten',name:'弁天池',jp:'弁天池',marker:[PONDS[2].x,BENTEN_Y+3.2,PONDS[2].z],view:{p:E(54,1.65,56.5),t:[62,BENTEN_Y+0.6,48.5]},
-  text:`<p>有清园东南的小池叫弁天池，池中小小的朱红祠堂供奉着弁才天。池畔石组与枫树环绕，秋天红叶倒映在水面上。</p>
-  <p>点一下水面，看看涟漪。</p>`},
- {id:'ajisai',name:'紫阳花苑',jp:'あじさい苑',marker:[84,H(84,30)+5,30],view:{p:E(70,1.65,44),t:[88,H(88,28)+1.5,26]},
-  text:`<p>往生极乐院东侧的山坡是“紫阳花苑”，在杉林下种着大片绣球花（紫阳花），寺方介绍约有3000株。6月中旬到7月上旬盛开，有蓝、紫、粉、白等颜色，梅雨天里尤其好看。</p>
-  <p>沿着苑中的小路往上走，就到金色不动堂。</p>`,acts:[['看绣球花开（6月）',()=>{ seasonIdx=1; applySeason(); toast('梅雨时节，紫阳花开满山坡'); }]]},
- {id:'fudo',name:'金色不动堂',jp:'金色不動堂',marker:[HALLS.fudo.x,FUDO.top+1.6,HALLS.fudo.z],view:{p:E(80,1.8,31),t:[104,FUDO.f+3.0,30]},
-  text:`<p>1989年（平成元年）建成的祈愿道场，供奉本尊金色不动明王（秘佛），平时藏在厨子里，每年只在特定时期开扉。堂前立着两座大石灯笼。</p>
-  <p>这里是信众祈愿的地方，堂内每天都有护摩祈祷。</p>`},
- {id:'kannon',name:'观音堂·小观音',jp:'観音堂 · 小観音',marker:[HALLS.kannon.x,KANNON.top+1.6,HALLS.kannon.z],view:{p:E(105,1.65,4.5),t:[108,KANNON.f+2.0,-12]},
-  text:`<p>1998年（平成10年）建成的观音堂，堂内安置着高约3米的金色观音像。堂两旁的“小观音堂”里，层层排列着信众供奉的无数小观音像，金光点点。</p>
-  <p>观音堂北边的山脚下就是律川，溪水沿着寺院北侧向西流去。</p>`,acts:[['供奉一尊小观音',()=>offerKannon()]]},
- {id:'suzaku',name:'朱雀门',jp:'朱雀門',marker:[SUZAKU.x,H(SUZAKU.x,SUZAKU.z)+6,SUZAKU.z],view:{p:E(38,1.65,64),t:[38,OJO.f+1.8,32]},
-  text:`<p>朱雀门是往生极乐院的正门，朝南而开，现存的门是后世重建的。门平常关着，从门外往北望，正好把往生极乐院框在两根门柱之间。</p>
-  <p>回程沿着寺院南侧走，不远处就是出口和圆融藏。</p>`},
- {id:'enyu',name:'圆融藏·出口',jp:'円融蔵 · 宝物館',marker:[HALLS.enyu.x,ENYU.top+1.6,HALLS.enyu.z],view:{p:E(-22,1.65,60),t:[-36,ENYU.f+2,40]},
-  text:`<p>出口附近的圆融藏是三千院的收藏库兼展示馆，2006年（平成18年）秋开馆，收藏重要文化财等寺宝。馆内按原尺寸复原了往生极乐院的船底天井：依据红外线调查，重现了当年用极彩色画成的天女与菩萨。</p>
-  <p>走出寺门，参道还通往大原的来迎院、宝泉院、胜林院和寂光院。</p>`,acts:[['看复原的天井彩绘',()=>{ restoreTo=1; enterOjo(); toast('依据红外线调查复原的极彩色天井'); }]]},
+ {id:'jizo',name:'童地藏·弁天池',jp:'わらべ地蔵 · 弁天池',marker:[JIZO.x,H(JIZO.x,JIZO.z)+2.2,JIZO.z],view:{p:E(51.2,0.9,41.3),t:[51.5,H(JIZO.x,JIZO.z)+0.25,36.4]},
+  text:`<p>往生极乐院南边、弁天池旁的苔地上，散落着几尊小小的石地藏：有的趴在苔上托着腮，有的并肩而坐，有的双手合十，脸上都带着微笑，这就是“童地藏”（わらべ地蔵），出自石雕家杉村孝之手。</p>
+  <p>青苔慢慢爬上它们的头和肩膀，像是从苔庭里长出来的一样，是三千院最受欢迎的拍照点之一。点一下池面，看看涟漪。</p>`,acts:[['和童地藏打招呼',()=>{ jizoWave=2.5; toast('童地藏好像笑得更开心了'); chime(); }]]},
+ {id:'benten',name:'弁财天',jp:'弁財天',marker:[BENZAI.x,BZ_Y+3.6,BENZAI.z],view:{p:E(54.6,1.65,42.4),t:[BENZAI.x,BZ_Y+1.2,BENZAI.z]},
+  text:`<p>从童地藏继续往东，穿过朱红的鸟居、走上几级石阶，就是供奉弁财天的小祠。弁财天是掌管音乐、辩才与财富的女神，这里是“京都七福神”之一。</p>
+  <p>按寺方境内图的顺路，从这里往北走，就到金色不动堂。不动堂的朱印（朱印1）同时写有“金色不动明王”和“弁财天”。</p>`},
+ {id:'fudo',name:'金色不动堂',jp:'金色不動堂 · 朱印1',marker:[HALLS.fudo.x,FUDO.top+1.6,HALLS.fudo.z],view:{p:E(80,1.7,21),t:[80,FUDO.f+2.8,-6.5]},
+  text:`<p>1989年（平成元年）建成的祈愿道场，堂前是铺着碎石的宽阔前庭，两座大石灯笼分立左右。本尊金色不动明王是秘佛，平时藏在厨子里，只在每年4月的不动明王大祭期间开扉约一个月。</p>
+  <p>堂内每天都有护摩祈祷。这里也是领取朱印的地方之一（朱印1：金色不动明王·弁财天）。前庭东边的石阶往上，就是观音堂。</p>`},
+ {id:'kannon',name:'观音堂·慈眼之庭',jp:'観音堂 · 小観音 · 慈眼の庭',marker:[HALLS.kannon.x,KANNON.top+1.6,HALLS.kannon.z],view:{p:[103.2,H(103.2,-4.8)+1.7,-4.8],t:[HALLS.kannon.x,KANNON.f+2.4,HALLS.kannon.z+2]},
+  text:`<p>登上石阶，正面是1998年（平成10年）建成的观音堂，堂内安置着高约3米的金色观音像（朱印2：观音菩萨）。观音堂两旁的“小观音堂”里，层层排列着信众供奉的无数小观音像，金光点点。</p>
+  <p>观音堂北边是“慈眼之庭”：二十五尊石雕菩萨散立在青苔上，表现观音的净土。顺路从这里往北下坡，去律川对岸的卖炭翁石佛。</p>`,acts:[['供奉一尊小观音',()=>offerKannon()]]},
+ {id:'sekibutsu',name:'卖炭翁石佛',jp:'阿弥陀石仏（売炭翁石仏）',marker:[BAITAN.x,H(BAITAN.x,BAITAN.z)+5.2,BAITAN.z],view:{p:[63.2,H(63.5,-62)+1.6,-61.5],t:[BAITAN.x,H(BAITAN.x,BAITAN.z)+1.9,BAITAN.z]},
+  text:`<p>从金色不动堂往北，走过架在律川上的石桥，对岸坐着一尊巨大的阿弥陀石佛，是镰仓时代的作品。相传这一带曾住着一位烧炭卖炭的老翁，当地人便称它“卖炭翁石佛”。</p>
+  <p>律川是三千院北侧的小溪，和南侧的吕川一样，名字取自天台声明的音律术语。点一下溪水可以看到涟漪。</p>`},
+ {id:'ajisai',name:'紫阳花苑',jp:'あじさい苑',marker:[56,H(56,-12)+5,-12],view:{p:E(52.2,1.7,-31),t:[50.6,H(50.6,-15)+0.6,-15]},
+  text:`<p>回程从石佛折返，穿过往生极乐院东北边的山坡“紫阳花苑”往下走。杉林下种着数千株绣球花（紫阳花），6月中旬到7月盛开，有蓝、紫、粉、白等颜色，梅雨天里尤其好看。</p>
+  <p>花苑的小路一直通回弁财天下方的鸟居。</p>`,acts:[['看绣球花开（6月）',()=>{ seasonIdx=1; applySeason(); toast('梅雨时节，紫阳花开满山坡'); }]]},
+ {id:'enyu',name:'圆融藏·出口',jp:'円融蔵 · 朱印3',marker:[HALLS.enyu.x,ENYU.top+1.6,HALLS.enyu.z],view:{p:E(-29,1.65,41),t:[-40,ENYU.f+2.4,56]},
+  text:`<p>回程沿寺院南侧往西走，左手边南墙上的红色小门是“朱雀门”：往生极乐院还是本堂时的正门，现在关闭。再经过写经道场“圆融房”，就到了圆融藏。</p>
+  <p>圆融藏是三千院的收藏库兼展示馆，2006年（平成18年）秋开馆。馆内按原尺寸复原了往生极乐院的船底天井：依据红外线调查，重现了当年用极彩色画成的天女与菩萨。这里也领取朱印（朱印3：药师如来·阿弥陀三尊，其他各种朱印也在这里受理）。看完沿西侧走回御殿门出寺。</p>`,acts:[['看复原的天井彩绘',()=>{ restoreTo=1; enterOjo(); toast('依据红外线调查复原的极彩色天井'); }]]},
 ];
-const OVERVIEW={name:'三千院 全景',jp:'三千院門跡 · 京都市左京区大原来迎院町',view:{p:[-72,100,138],t:[55,4,40]},
+const OVERVIEW={name:'三千院 全景',jp:'三千院門跡 · 京都市左京区大原来迎院町',view:{p:[-80,105,128],t:[45,8,-4]},
   text:`<p><b>三千院门迹</b>，天台宗三门迹之一，位于京都东北的大原。起源可追溯到最澄在比叡山建的圆融房，平安后期起由皇族子弟（法亲王）出任住持，几经迁移，明治时代定于大原。寺内有国宝阿弥陀三尊、重要文化财往生极乐院，以青苔、杉林与红叶著称。</p>
-  <p>参观路线：<b>三千院道 → 御殿门 → 客殿·聚碧园 → 宸殿 → 有清园 → 往生极乐院 → 童地藏 → 弁天池 → 紫阳花苑 → 金色不动堂 → 观音堂 → 朱雀门 → 圆融藏·出口</b>。金色线为路线。</p>
+  <p>参观路线（依寺方境内图的箭头顺路）：<b>三千院道 → 御殿门·接待处 → 客殿·聚碧园 → 宸殿 → 有清园 → 往生极乐院 → 童地藏·弁天池 → 弁财天 → 金色不动堂 → 观音堂·慈眼之庭 → 卖炭翁石佛 → 紫阳花苑 → 圆融藏 → 御殿门出寺</b>。金色线为路线。</p>
   <p style="font-size:12px;color:#7a6f63">注：场景依据公开资料做示意复原。各建筑的先后顺序与大致方位参照实际，尺寸、坡度、树木与参道商店为推定。</p>`};
 const VIEWPTS=[], VIEWLANES=[];
 for(const h of HS){ const c=h.view.p, t=h.view.t; VIEWPTS.push([c[0],c[2]]); VIEWLANES.push([c[0],c[2],c[0]+(t[0]-c[0])*0.85,c[2]+(t[2]-c[2])*0.85]); }
@@ -1156,7 +1203,12 @@ function occupied(x,z,pad=0){
   if(inPrec(x,z,1)&&(z<PREC.z0+2||z>PREC.z1-2)&&x<60) return true;
   if(Math.hypot(x-GATE.x,z-GATE.z)<9) return true;
   if(Math.abs(x-SUZAKU.x)<4&&Math.abs(z-SUZAKU.z)<4) return true;
-  if(Math.abs(x-96.5)<4&&Math.abs(z-HALLS.kannon.z)<5||Math.abs(x-119.5)<4&&Math.abs(z-HALLS.kannon.z)<5) return true;
+  for(const F of KF){ const e=F.elements; if(Math.abs(x-e[12])<5&&Math.abs(z-e[14])<4.5) return true; }
+  if(inFore(x,z)||(x>KSTEPS.x0-1&&x<KSTEPS.x1+1&&z>KSTEPS.z0-1.5&&z<KSTEPS.z1+1.5)) return true;
+  if(Math.hypot(x-95.5,z-15.5)<2) return true;
+  if(JIGEN_N.some(([jx,jz])=>Math.hypot(x-jx,z-jz)<1.2+pad)) return true;
+  if(Math.hypot(x-BENZAI.x,z-BENZAI.z)<3.2||Math.hypot(x-TORII.x,z-TORII.z)<2.2) return true;
+  if(Math.hypot(x-BAITAN.x,z-BAITAN.z)<4.5) return true;
   if(Math.hypot(x-JIZO.x,z-JIZO.z)<3.2) return true;
   if(x<-4&&x>-53&&z<-3&&z>-30) return true;                         // forecourt and 客殿
   return false;
@@ -1196,8 +1248,8 @@ function momiji(x,z,s,detail){
 const TREES=[];
 {
   // precinct: tall cedars of the 有清園 and around the halls
-  const cedarZone=(x,z)=>inYusei(x,z)||inAjisai(x,z)||(x>60&&x<122&&z>-30&&z<64)||(x>-52&&x<-4&&z>8&&z<64)||(x>-4&&x<60&&z>-46&&z<-30);
-  let n=0; for(let i=0;i<20000&&n<260;i++){ const x=R(-52,122), z=R(-45,65); if(!cedarZone(x,z)||occupied(x,z,0.5)||nearView(x,z,5)) continue; const d=inAjisai(x,z)?R(7,9.5):R(5.4,7.6); if(!spaced(x,z,d)) continue; TREES.push(sugi(x,z,R(0.85,1.15),true)); claim(x,z,d); n++; }
+  const cedarZone=(x,z)=>inYusei(x,z)||inAjisai(x,z)||(x>60&&x<126&&z>-46&&z<64)||(x>-52&&x<-4&&z>8&&z<64)||(x>-4&&x<60&&z>-46&&z<-30);
+  let n=0; for(let i=0;i<20000&&n<260;i++){ const x=R(-52,126), z=R(-45,65); if(!cedarZone(x,z)||occupied(x,z,0.5)||nearView(x,z,5)) continue; const d=inAjisai(x,z)?R(7,9.5):R(5.4,7.6); if(!spaced(x,z,d)) continue; TREES.push(sugi(x,z,R(0.85,1.15),true)); claim(x,z,d); n++; }
   // maples: around the gardens, along paths, the 聚碧園 and the forecourt
   let m=0; for(let i=0;i<20000&&m<150;i++){ const x=R(-52,122), z=R(-45,65); if(!inPrec(x,z,-1)||occupied(x,z,-0.6)||nearView(x,z,7)) continue; if(!spaced(x,z,4.6,0.55)) continue; const nearP=onPath(x,z)<9; if(!nearP&&rand()<0.5) continue; if(inYusei(x,z)&&x>4&&x<58&&z<54&&rand()<0.8) continue; momiji(x,z,R(0.8,1.15),true); claim(x,z,4); m++; }
   for(const [x,z] of [[-2,-2],[-44,-24],[-6,-34],[40,-30],[-48,8],[-40,14],[-10,12]]) if(!occupied(x,z,-1)){ momiji(x,z,1.1,true); claim(x,z,4); }
@@ -1207,7 +1259,7 @@ const TREES=[];
 }
 // hillside cedar plantations and mixed broadleaf woods
 const HILL=[], HILLB=[], FAR=[], FARB=[];
-const forested=(x,z,h)=>!inPrec(x,z,4)&&roadD(x,z)>9&&riverInfo(x,z).d>riverInfo(x,z).hw+2.5&&!(inVillage(x,z)&&h<5)&&!SHOPS.some(s=>Math.hypot(s.x-x,s.z-z)<s.r+3)&&!FARMS.some(f=>Math.hypot(f.x-x,f.z-z)<14);
+const forested=(x,z,h)=>!inPrec(x,z,4)&&onPath(x,z)>3.5&&Math.hypot(x-BAITAN.x,z-BAITAN.z)>7&&roadD(x,z)>9&&riverInfo(x,z).d>riverInfo(x,z).hw+2.5&&!(inVillage(x,z)&&h<5)&&!SHOPS.some(s=>Math.hypot(s.x-x,s.z-z)<s.r+3)&&!FARMS.some(f=>Math.hypot(f.x-x,f.z-z)<14);
 for(let i=0;i<30000&&HILL.length<2600;i++){ const a=R(0,6.28), r=Math.sqrt(R(0.01,1))*360; const x=20+Math.cos(a)*r*1.1, z=20+Math.sin(a)*r; const h=H(x,z); if(!forested(x,z,h)) continue; if(!spaced(x,z,5.5,0.6)) continue; claim(x,z,5); const broad=x<-60&&rand()<0.5||rand()<0.22; const s=R(0.8,1.25);
   (broad?HILLB:HILL).push({p:[x,h-0.3,z],r:[0,R(0,6.28),0],s:broad?[s*4.2,s*3.4,s*4.2]:[s,s*R(0.9,1.15),s],k:rand()}); }
 for(let i=0;i<60000&&FAR.length<7000;i++){ const x=R(-2000,1900), z=R(-2000,2000); const dd=Math.hypot(x-20,(z-20)*1.1); if(dd<330) continue; const h=H(x,z); if(h<6&&inVillage(x,z)) continue; if(h<0) continue; const s=R(1,1.6)*(1+dd/2400);
@@ -1222,7 +1274,7 @@ const MOSS=[]; for(let i=0;i<9000&&MOSS.length<520;i++){ const x=R(-4,70), z=R(-
 for(const t of TREES) if(inPrec(t.x,t.z)) MOSS.push({p:[t.x,H(t.x,t.z)-0.1,t.z],r:[0,R(0,6),0],s:[1.5,0.38,1.4]});
 /* ---- 紫陽花 ---- */
 const AJI=[], AJIF=[];
-for(let i=0;i<14000&&AJI.length<420;i++){ const x=R(40,120), z=R(-28,64); const zone=inAjisai(x,z)||(onPath(x,z)<4.5&&x>40&&inPrec(x,z,-1)); if(!zone||occupied(x,z,-1.6)||onPath(x,z)<1.5||nearView(x,z,2.6)) continue; if(!spaced(x,z,1.3,0.25)) continue;
+for(let i=0;i<14000&&AJI.length<420;i++){ const x=R(40,75), z=R(-46,40); const zone=inAjisai(x,z)||(onPath(x,z)<4.5&&x>44&&x<70&&inPrec(x,z,-1)); if(!zone||occupied(x,z,-1.6)||onPath(x,z)<1.5||nearView(x,z,2.6)) continue; if(!spaced(x,z,1.3,0.25)) continue;
   const r=R(0.6,1.0), y=H(x,z); AJI.push({p:[x,y+r*0.4,z],r:[0,R(0,6),0],s:[r*1.2,r*0.8,r*1.1],k:rand()}); claim(x,z,1.2); const hue=rand();
   const nf=Math.round(R(5,10)); for(let f=0;f<nf;f++){ const a=R(0,6.28), e=R(0.15,1.2); const fx=x+Math.cos(a)*Math.cos(e)*r*1.1, fz=z+Math.sin(a)*Math.cos(e)*r*1.0, fy=y+r*0.4+Math.sin(e)*r*0.75; const fs=R(0.15,0.24); AJIF.push({p:[fx,fy,fz],r:[R(0,6),R(0,6),0],s:[fs,fs*0.85,fs],k:hue,k2:rand()}); } }
 /* ---- ferns on the stream banks and the pond edges ---- */
@@ -1240,7 +1292,7 @@ const FERNS=[]; for(let i=0;i<30000&&FERNS.length<2400;i++){ const x=R(-200,170)
 /* ---- rocks: garden stone groupings, pond edges, stream banks ---- */
 for(const P of PONDS){ for(let a=0;a<6.28;a+=R(0.18,0.32)){ const k=R(1.0,1.12); rock(P.x+Math.cos(a)*P.rx*k,P.z+Math.sin(a)*P.rz*k,R(0.35,0.75),R(0.5,0.75),P.y-0.25); }
   for(let i=0;i<3;i++){ const a=R(0,6.28); rock(P.x+Math.cos(a)*P.rx*0.5,P.z+Math.sin(a)*P.rz*0.45,R(0.5,0.9),0.8,P.y-0.4); } }
-for(const [x,z,s] of [[-30,10,1.5],[-27,11,1.0],[-16,9,1.2],[-38,6,1.1],[-33,-2,0.9],[8,9,1.3],[22,1,1.1],[10,-1,0.8],[44,24,1.2],[28,40,1.0],[60,40,1.1],[66,52,1.3],[-12,4,1.0]]) if(!nearView(x,z,3)) rock(x,z,s,0.65);
+for(const [x,z,s] of [[-30,10,1.5],[-27,11,1.0],[-16,9,1.2],[-38,6,1.1],[-33,-2,0.9],[8,9,1.3],[22,1,1.1],[10,-1,0.8],[44,24,1.2],[28,40,1.0],[61,45,1.1],[66,52,1.3],[-12,4,1.0]]) if(!nearView(x,z,3)) rock(x,z,s,0.65);
 for(const r of RIVERS){ const cur=new THREE.CatmullRomCurve3(r.P.map(([x,z])=>new V3(x,0,z)),false,'centripetal'), L=cur.getLength();
   for(let d=0;d<L;d+=0.9){ const t=d/L, p=cur.getPointAt(t), tg=cur.getTangentAt(t); for(const s of [-1,1]){ const x=p.x-tg.z*s*(r.hw+0.35), z=p.z+tg.x*s*(r.hw+0.35); const wl=gNat(p.x,p.z)-2.3;
       for(const yy of [wl-0.3,wl+0.45,wl+1.2]) ROCKS.push({p:[x+R(-0.1,0.1),yy,z+R(-0.1,0.1)],r:[R(0,0.3),R(0,6),R(0,0.3)],s:[R(0.4,0.6),0.36,R(0.35,0.5)],c:pickA(['#8a867d','#77736a','#959187','#6c6a62'])}); }
@@ -1257,7 +1309,7 @@ const JIZOS=[];
       if(pose==='pray') part(g,G.box,mt,[0,0.27,0.15],[0.05,0.1,0.05],[-0.3,0,0]); else for(const sx of [-1,1]) part(g,G.sph,mt,[sx*0.08,0.18,0.13],[0.05,0.05,0.05]);
       smile(g,0.44,0.145,1); }
     g.traverse(o=>{ o.userData.hs='jizo'; }); JIZOS.push(g); };
-  kid(JIZO.x,JIZO.z,PI*1.15,'lie'); kid(JIZO.x+1.2,JIZO.z-0.6,PI*1.05,'sit'); kid(JIZO.x+1.55,JIZO.z-0.45,PI*1.1,'sit'); kid(JIZO.x-0.9,JIZO.z-1.1,PI*1.2,'pray'); kid(JIZO.x+0.4,JIZO.z-1.9,PI*1.0,'sit');
+  kid(JIZO.x,JIZO.z,-0.15,'lie'); kid(JIZO.x+1.2,JIZO.z-0.6,0.1,'sit'); kid(JIZO.x+1.55,JIZO.z-0.45,0.05,'sit'); kid(JIZO.x-0.9,JIZO.z-1.1,-0.25,'pray'); kid(JIZO.x+0.4,JIZO.z-1.9,0.15,'sit');
   for(const g of JIZOS) MOSS.push({p:[g.position.x,g.position.y-0.15,g.position.z],r:[0,R(0,6),0],s:[0.9,0.22,0.8]}); }
 
 /* ---- build the instanced vegetation ---- */
@@ -1361,7 +1413,7 @@ function ribbon(P,widthAt,y,mat,o={}){
 /* ---- ponds (planar reflection, one plane at a time) and the two streams ---- */
 let WATER_Y=POND_Y;
 const pondMeshes=[];
-for(const P of PONDS){ P.on={value:0}; const m=makeWater({refl:true,on:P.on,color:P.id==='benten'?'#263a30':'#22362e',opacity:0.78,amp:0.022}); const s=waterDisc(P.x,P.z,P.rx*1.04,P.rz*1.04,P.y,m,64,8); s.userData.hs=P.id==='shuheki'?'kyakuden':P.id==='yusei'?'yusei':'benten'; s.userData.pond=P; clickables.push(s); pondMeshes.push(s); }
+for(const P of PONDS){ P.on={value:0}; const m=makeWater({refl:true,on:P.on,color:P.id==='benten'?'#263a30':'#22362e',opacity:0.78,amp:0.022}); const s=waterDisc(P.x,P.z,P.rx*1.04,P.rz*1.04,P.y,m,64,8); s.userData.hs=P.id==='shuheki'?'kyakuden':P.id==='yusei'?'yusei':'jizo'; s.userData.pond=P; clickables.push(s); pondMeshes.push(s); }
 // streams run downhill: the ribbon follows the water line of each channel
 function riverRibbon(r,mat){
   const cur=new THREE.CatmullRomCurve3(r.P.map(([x,z])=>new V3(x,0,z)),false,'centripetal'), N=Math.round(cur.getLength()/1.0), cols=5, pos=[],flow=[],edge=[],idx=[];
@@ -1372,7 +1424,7 @@ function riverRibbon(r,mat){
   const m=new THREE.Mesh(g,mat); m.receiveShadow=true; m.renderOrder=2; scene.add(m); reflHide.push(m); return m;
 }
 const streamMat=makeWater({color:'#2c4038',opacity:0.85,amp:0.07});
-for(const r of RIVERS){ const m=riverRibbon(r,streamMat); m.userData.hs=r.id==='ro'?'sando':'kannon'; m.userData.stream=true; clickables.push(m); }
+for(const r of RIVERS){ const m=riverRibbon(r,streamMat); m.userData.hs=r.id==='ro'?'sando':'sekibutsu'; m.userData.stream=true; clickables.push(m); }
 // a few stone slab bridges over the 呂川
 for(const t of [0.18,0.42,0.62]){ const cur=new THREE.CatmullRomCurve3(RO.map(([x,z])=>new V3(x,0,z)),false,'centripetal'); const p=cur.getPointAt(t), d=cur.getTangentAt(t), y=gNat(p.x,p.z)-0.35;
   const a=new V3(p.x+d.z*4,y,p.z-d.x*4), b=new V3(p.x-d.z*4,y,p.z+d.x*4); beam('granite',a,b,1.8,0.3); }
@@ -1437,7 +1489,7 @@ flushStone();
 for(const ch of [VEG.fern,VEG.moss,VEG.kari,VEG.ajiF,VEG.far,VEG.farB]) reflHide.push(...ch.list);
 
 /* ---- visiting route ---- */
-const ROUTE2D=[...APPROACH,[-62,-10],[-54,-10],[-44,-10],[-36,-8],[-28,-6.8],[-14,-6.2],[-4,-5],[8,-4.4],[22,-4.4],[33,-5.5],...PATHS[1].slice(1),...PATHS[2].slice(1),...PATHS[3],...PATHS[4].slice(1),[-62,48],[-67,46]];
+const ROUTE2D=[...APPROACH,[-62,-10],[-54,-10],[-47,-11.5],[-44,-19.5],[-38,-15],[-31,-11],[-28,-6.8],[-14,-6.2],[-4,-5],[8,-4.4],[22,-4.4],[33,-5.5],...PATHS[1].slice(1),...PATHS[2].slice(1),...PATHS[3].slice(1),...PATHS[4].slice(1),...PATHS[5].slice(1),...PATHS[6],...PATHS[7].slice(1),[-62,-10],[-70,-10]];
 let routeMesh;
 { const pts=ROUTE2D.map(([x,z])=>new V3(x,H(x,z)+0.45,z));
   const curve=new THREE.CatmullRomCurve3(pts,false,'centripetal');
@@ -1445,7 +1497,10 @@ let routeMesh;
   routeMesh.visible=false; scene.add(routeMesh); reflHide.push(routeMesh); }
 // a denser walking line for the camera
 const WALK=[]; for(let i=0;i<ROUTE2D.length-1;i++){ const [ax,az]=ROUTE2D[i],[bx_,bz]=ROUTE2D[i+1], L=Math.hypot(bx_-ax,bz-az), n=Math.max(1,Math.round(L/3)); for(let k=0;k<n;k++){ const t=k/n; WALK.push([ax+(bx_-ax)*t,az+(bz-az)*t]); } } WALK.push(ROUTE2D[ROUTE2D.length-1]);
-const walkIdx=(x,z)=>{ let bi=0,bd=1e9; WALK.forEach(([wx,wz],i)=>{ const d=Math.hypot(wx-x,wz-z); if(d<bd){ bd=d; bi=i; } }); return [bi,bd]; };
+const walkIdx=(x,z,lo=0)=>{ let bi=lo,bd=1e9; for(let i=lo;i<WALK.length;i++){ const d=Math.hypot(WALK[i][0]-x,WALK[i][1]-z); if(d<bd){ bd=d; bi=i; } } return [bi,bd]; };
+// the route loops back on itself, so each stop gets the first walk index after the previous stop's
+{ let prev=0; HS.forEach(h=>{ const [i]=walkIdx(h.view.p[0],h.view.p[2],prev); h.view.wi=i; prev=i; }); }
+let walkAt=null;
 
 /* markers */
 const markerGroup=new THREE.Group(); scene.add(markerGroup); reflHide.push(markerGroup);
@@ -1471,12 +1526,14 @@ function flyTo(view){
   controls.autoRotate=false;
   const p0=camera.position.clone(), t0=controls.target.clone(), p1=V(view.p), t1=V(view.t);
   const d=p0.distanceTo(p1); const pts=[p0]; const ground=isGround(p0)&&isGround(p1);
-  if(ground&&d>12){ const [i0,d0]=walkIdx(p0.x,p0.z), [i1,d1]=walkIdx(p1.x,p1.z);
+  if(ground&&d>12){ let [i0,d0]=walkIdx(p0.x,p0.z), [i1,d1]=walkIdx(p1.x,p1.z);
+    if(walkAt!==null){ const q=WALK[walkAt], dq=Math.hypot(q[0]-p0.x,q[1]-p0.z); if(dq<30){ i0=walkAt; d0=dq; } }
+    if(view.wi!==undefined){ i1=view.wi; d1=Math.hypot(WALK[i1][0]-p1.x,WALK[i1][1]-p1.z); }
     if(d0<30&&d1<30&&Math.abs(i1-i0)>1){ const st=i1>i0?1:-1; for(let i=i0+st;i!==i1;i+=st){ const [x,z]=WALK[i]; const q=new V3(x,H(x,z)+1.75,z); if(q.distanceTo(p0)>2.5&&q.distanceTo(p1)>2.5) pts.push(q); } } }
   if(pts.length===1&&d>6){ const mid=p0.clone().lerp(p1,0.5); mid.y+=Math.min(60,d*0.25); mid.y=Math.max(mid.y,Math.min(p0.y,p1.y)); pts.push(mid); }
   pts.push(p1);
   const curve=pts.length>2?new THREE.CatmullRomCurve3(pts,false,'centripetal'):null; const L=curve?curve.getLength():d;
-  const walk=ground&&pts.length>3;
+  const walk=ground&&pts.length>3; walkAt=view.wi??null;
   fly={curve,p0,p1,t0,t1,start:performance.now(),dur:Math.min(walk?16000:6000,Math.max(1400,900+L*(walk?38:28))),ground:walk};
   controls.enabled=false;
 }
@@ -1614,7 +1671,7 @@ renderer.domElement.addEventListener('pointerdown',e=>{ downPos=[e.clientX,e.cli
 renderer.domElement.addEventListener('pointerup',e=>{
   if(!downPos||Math.hypot(e.clientX-downPos[0],e.clientY-downPos[1])>6) return;
   const hit=pick(e); if(!hit) return;
-  if(hit.water&&hit.point){ addRipple(hit.point.x,hit.point.z,1); chime(); if(hit.hs==='sando'||hit.hs==='kannon'||hit.hs==='yusei'||hit.hs==='kyakuden') return; }
+  if(hit.water&&hit.point){ addRipple(hit.point.x,hit.point.z,1); chime(); if(hit.hs==='sando'||hit.hs==='sekibutsu'||hit.hs==='yusei'||hit.hs==='kyakuden') return; }
   const h=byId[hit.hs]; if(!h) return;
   if(h.id==='jizo'&&cur===h.idx){ jizoWave=2.5; toast('童地藏好像笑得更开心了'); chime(); return; }
   if(cur!==h.idx) goStop(h.idx);
