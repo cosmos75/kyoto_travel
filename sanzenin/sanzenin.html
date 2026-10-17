@@ -1133,7 +1133,7 @@ const HS=[
   text:`<p>从金色不动堂往北，走过架在律川上的石桥，对岸坐着一尊巨大的阿弥陀石佛，是镰仓时代的作品。相传这一带曾住着一位烧炭卖炭的老翁，当地人便称它“卖炭翁石佛”。</p>
   <p>律川是三千院北侧的小溪，和南侧的吕川一样，名字取自天台声明的音律术语。点一下溪水可以看到涟漪。</p>`},
  {id:'ajisai',name:'紫阳花苑',jp:'あじさい苑',marker:[56,H(56,-12)+5,-12],view:{p:E(52.2,1.7,-31),t:[50.6,H(50.6,-15)+0.6,-15]},
-  text:`<p>回程从石佛折返，穿过往生极乐院东北边的山坡“紫阳花苑”往下走。杉林下种着数千株绣球花（紫阳花），6月中旬到7月盛开，有蓝、紫、粉、白等颜色，梅雨天里尤其好看。</p>
+  text:`<p>回程从石佛折返，穿过往生极乐院东北边的山坡“紫阳花苑”往下走。杉林下的整片山坡种满了数千株绣球花（紫阳花），蓝、紫、粉、白成片相间，6月中旬到7月盛开，梅雨天里尤其好看。到了秋天，残留的花头会褪成带红晕的“秋色紫阳花”。</p>
   <p>花苑的小路一直通回弁财天下方的鸟居。</p>`,acts:[['看绣球花开（6月）',()=>{ seasonIdx=1; applySeason(); toast('梅雨时节，紫阳花开满山坡'); }]]},
  {id:'enyu',name:'圆融藏·出口',jp:'円融蔵 · 朱印3',marker:[HALLS.enyu.x,ENYU.top+1.6,HALLS.enyu.z],view:{p:E(-29,1.65,41),t:[-40,ENYU.f+2.4,56]},
   text:`<p>回程沿寺院南侧往西走，左手边南墙上的红色小门是“朱雀门”：往生极乐院还是本堂时的正门，现在关闭。再经过写经道场“圆融房”，就到了圆融藏。</p>
@@ -1249,9 +1249,9 @@ const TREES=[];
 {
   // precinct: tall cedars of the 有清園 and around the halls
   const cedarZone=(x,z)=>inYusei(x,z)||inAjisai(x,z)||(x>60&&x<126&&z>-46&&z<64)||(x>-52&&x<-4&&z>8&&z<64)||(x>-4&&x<60&&z>-46&&z<-30);
-  let n=0; for(let i=0;i<20000&&n<260;i++){ const x=R(-52,126), z=R(-45,65); if(!cedarZone(x,z)||occupied(x,z,0.5)||nearView(x,z,5)) continue; const d=inAjisai(x,z)?R(7,9.5):R(5.4,7.6); if(!spaced(x,z,d)) continue; TREES.push(sugi(x,z,R(0.85,1.15),true)); claim(x,z,d); n++; }
+  let n=0; for(let i=0;i<20000&&n<260;i++){ const x=R(-52,126), z=R(-45,65); if(!cedarZone(x,z)||occupied(x,z,0.5)||nearView(x,z,5)) continue; const d=inAjisai(x,z)?R(11,14):R(5.4,7.6); if(!spaced(x,z,d)) continue; TREES.push(sugi(x,z,R(0.85,1.15),true)); claim(x,z,d); n++; }
   // maples: around the gardens, along paths, the 聚碧園 and the forecourt
-  let m=0; for(let i=0;i<20000&&m<150;i++){ const x=R(-52,122), z=R(-45,65); if(!inPrec(x,z,-1)||occupied(x,z,-0.6)||nearView(x,z,7)) continue; if(!spaced(x,z,4.6,0.55)) continue; const nearP=onPath(x,z)<9; if(!nearP&&rand()<0.5) continue; if(inYusei(x,z)&&x>4&&x<58&&z<54&&rand()<0.8) continue; momiji(x,z,R(0.8,1.15),true); claim(x,z,4); m++; }
+  let m=0; for(let i=0;i<20000&&m<150;i++){ const x=R(-52,122), z=R(-45,65); if(!inPrec(x,z,-1)||occupied(x,z,-0.6)||nearView(x,z,7)) continue; if(!spaced(x,z,4.6,0.55)) continue; const nearP=onPath(x,z)<9; if(!nearP&&rand()<0.5) continue; if(inYusei(x,z)&&x>4&&x<58&&z<54&&rand()<0.8) continue; if(inAjisai(x,z)&&rand()<0.85) continue; momiji(x,z,R(0.8,1.15),true); claim(x,z,4); m++; }
   for(const [x,z] of [[-2,-2],[-44,-24],[-6,-34],[40,-30],[-48,8],[-40,14],[-10,12]]) if(!occupied(x,z,-1)){ momiji(x,z,1.1,true); claim(x,z,4); }
   // along the 三千院道: maples by the stream, a few cedars
   for(let i=0;i<4000;i++){ const x=R(-200,-56), z=R(-20,170); const rd=roadD(x,z); if(rd<4.5||rd>16) continue; if(x>-90&&z<14) continue; if(SHOPS.some(s=>Math.hypot(s.x-x,s.z-z)<s.r+1.5)) continue; if(riverInfo(x,z).d<riverInfo(x,z).hw+0.8) continue; if(!spaced(x,z,7,0.6)) continue; if(nearView(x,z,3)) continue;
@@ -1268,15 +1268,22 @@ for(let i=0;i<60000&&FAR.length<7000;i++){ const x=R(-2000,1900), z=R(-2000,2000
 /* ---- 刈込 (clipped azalea mounds) of the 聚碧園 and the garden edges ---- */
 const KARI=[]; { for(let i=0;i<3000&&KARI.length<160;i++){ const x=R(-50,-6), z=R(-6,15); if(!inShuheki(x,z)) continue; const pa=pondAt(x,z); if(pa&&pa[1]<1.25) continue; if(onPath(x,z)<1.2||occupied(x,z,-2.2)||nearView(x,z,3.5)) continue; if(z<-2&&rand()<0.7) continue;
     const r=R(0.6,1.4); KARI.push({p:[x,H(x,z)+r*0.15,z],r:[0,R(0,6),0],s:[r*R(1,1.4),r*R(0.55,0.8),r],k:rand()}); }
-  for(const P of PATHS) for(let s=0;s<200;s+=R(3,6)){ const a=pathAt(P,s); if(!a||!inPrec(a.x,a.z,-2)) continue; const side=rand()<0.5?-1:1, x=a.x-a.dz*side*2.1, z=a.z+a.dx*side*2.1; if(occupied(x,z,-1.2)||onPath(x,z)<1.6||nearView(x,z,4.5)) continue; const r=R(0.45,0.8); KARI.push({p:[x,H(x,z)+r*0.2,z],r:[0,R(0,6),0],s:[r*1.3,r*0.7,r],k:rand()}); } }
+  for(const P of PATHS) for(let s=0;s<200;s+=R(3,6)){ const a=pathAt(P,s); if(!a||!inPrec(a.x,a.z,-2)) continue; const side=rand()<0.5?-1:1, x=a.x-a.dz*side*2.1, z=a.z+a.dx*side*2.1; if(inAjisai(x,z)||occupied(x,z,-1.2)||onPath(x,z)<1.6||nearView(x,z,4.5)) continue; const r=R(0.45,0.8); KARI.push({p:[x,H(x,z)+r*0.2,z],r:[0,R(0,6),0],s:[r*1.3,r*0.7,r],k:rand()}); } }
 /* ---- moss mounds ---- */
 const MOSS=[]; for(let i=0;i<9000&&MOSS.length<520;i++){ const x=R(-4,70), z=R(-6,64); if(!inYusei(x,z)&&!(inShuheki(x,z)&&rand()<0.4)) continue; if(occupied(x,z,-1.5)||onPath(x,z)<1.6||nearView(x,z,1.4)) continue; const r=R(0.5,2.2); MOSS.push({p:[x,H(x,z)-r*0.12,z],r:[0,R(0,6),0],s:[r*R(1,1.5),r*R(0.18,0.32),r]}); }
 for(const t of TREES) if(inPrec(t.x,t.z)) MOSS.push({p:[t.x,H(t.x,t.z)-0.1,t.z],r:[0,R(0,6),0],s:[1.5,0.38,1.4]});
 /* ---- 紫陽花 ---- */
 const AJI=[], AJIF=[];
-for(let i=0;i<14000&&AJI.length<420;i++){ const x=R(40,75), z=R(-46,40); const zone=inAjisai(x,z)||(onPath(x,z)<4.5&&x>44&&x<70&&inPrec(x,z,-1)); if(!zone||occupied(x,z,-1.6)||onPath(x,z)<1.5||nearView(x,z,2.6)) continue; if(!spaced(x,z,1.3,0.25)) continue;
-  const r=R(0.6,1.0), y=H(x,z); AJI.push({p:[x,y+r*0.4,z],r:[0,R(0,6),0],s:[r*1.2,r*0.8,r*1.1],k:rand()}); claim(x,z,1.2); const hue=rand();
-  const nf=Math.round(R(5,10)); for(let f=0;f<nf;f++){ const a=R(0,6.28), e=R(0.15,1.2); const fx=x+Math.cos(a)*Math.cos(e)*r*1.1, fz=z+Math.sin(a)*Math.cos(e)*r*1.0, fy=y+r*0.4+Math.sin(e)*r*0.75; const fs=R(0.15,0.24); AJIF.push({p:[fx,fy,fz],r:[R(0,6),R(0,6),0],s:[fs,fs*0.85,fs],k:hue,k2:rand()}); } }
+// colour drifts: the beds are planted in groups, so neighbouring bushes share a colour family (0 blue · 1 violet · 2 pink · 3 white)
+const ajiHue=(x,z)=>{ const v=0.5+0.5*Math.sin(x*0.21+z*0.07)*Math.cos(z*0.17-x*0.05); return v<0.32?0:v<0.55?1:v<0.75?2:3; };
+{ const add=(x,z)=>{ const r=R(0.55,0.95), y=H(x,z); AJI.push({p:[x,y+r*0.32,z],r:[0,R(0,6.28),0],s:[r*R(1.0,1.25),r*R(0.8,1.0),r*R(1.0,1.2)],k:rand()}); claim(x,z,0.9);
+    const hue=ajiHue(x,z), nf=Math.round(R(9,15)*r/0.75);
+    for(let f=0;f<nf;f++){ const a=R(0,6.28), e=R(0.25,1.35); const fx=x+Math.cos(a)*Math.cos(e)*r*1.1, fz=z+Math.sin(a)*Math.cos(e)*r*1.05, fy=y+r*0.32+Math.sin(e)*r*0.82; const fs=R(0.11,0.17)*(0.8+0.3*r);
+      AJIF.push({p:[fx,fy,fz],r:[R(-0.3,0.3)+Math.cos(e)*0.6*Math.sin(a),R(0,6),R(-0.3,0.3)-Math.cos(e)*0.6*Math.cos(a)],s:[fs,fs*0.82,fs],k:hue,k2:rand(),k3:rand()}); } };
+  // the 紫阳花苑: a carpet of bushes under thinned cedars
+  for(let i=0;i<40000&&AJI.length<1150;i++){ const x=R(43,70), z=R(-46,27); if(!inAjisai(x,z)) continue; if(occupied(x,z,-1.6)||onPath(x,z)<1.25||nearView(x,z,1.6)) continue; if(!spaced(x,z,1.0,0.2)) continue; add(x,z); }
+  // and hedges of them along the nearby paths
+  for(let i=0;i<8000&&AJI.length<1350;i++){ const x=R(40,75), z=R(-46,45); if(inAjisai(x,z)||onPath(x,z)>3.6||onPath(x,z)<1.3||!inPrec(x,z,-1)) continue; if(occupied(x,z,-1.6)||nearView(x,z,2.2)) continue; if(!spaced(x,z,1.05,0.2)) continue; add(x,z); } }
 /* ---- ferns on the stream banks and the pond edges ---- */
 const fernGeo=(()=>{ const parts=[];
   for(let f=0;f<6;f++){ const a=f/6*6.283+R(-0.25,0.25), L=R(0.5,0.8), arch=R(0.5,0.8); const P=[], N=10;
@@ -1344,13 +1351,29 @@ const kariMat=leafy(std('#ffffff',{roughness:.7}),9.0,0.9,0.22,0.05,[0.3,0.7,1.0
 const shrubGeo=new THREE.IcosahedronGeometry(1,2); { const p=shrubGeo.attributes.position; for(let i=0;i<p.count;i++){ _v.fromBufferAttribute(p,i); const n=1+0.04*Math.sin(_v.x*9+_v.z*7); p.setXYZ(i,_v.x*n,_v.y*n,_v.z*n);} shrubGeo.computeVertexNormals(); sphereNormals(shrubGeo); }
 VEG.kari=makeChunks(shrubGeo,kariMat,KARI);
 VEG.moss=makeChunks(new THREE.SphereGeometry(1,16,8,0,PI*2,0,PI/2),M.mossMound,MOSS,{shadow:false});
-VEG.aji=makeChunks(shrubGeo,leafy(std('#ffffff',{roughness:.7}),5.0,1.3,0.3,0.06,[0.3,0.7,1.0]),AJI);
+// hydrangea bush: a dark leafy core wrapped in broad, toothed leaves
+const ajiBushGeo=(()=>{ const pts=[], N=14, wAt=t=>0.5*Math.sin(Math.PI*Math.pow(t,0.8))*(1-0.25*t);
+  for(let i=0;i<=N;i++){ const t=i/N; pts.push(new THREE.Vector2(wAt(t)*(i%2?0.94:1.04),t)); }
+  for(let i=N-1;i>0;i--){ const t=i/N; pts.push(new THREE.Vector2(-wAt(t)*(i%2?0.94:1.04),t)); }
+  const leaf=new THREE.ShapeGeometry(new THREE.Shape(pts)); leaf.translate(0,0.05,0); leaf.scale(0.17,0.21,0.17);
+  { const p=leaf.attributes.position; for(let i=0;i<p.count;i++){ const x=p.getX(i), y=p.getY(i); p.setZ(i,-1.2*y*y-2.5*x*x); } }   // cupped and drooping
+  const parts=[], qq=new THREE.Quaternion(), tq=new THREE.Quaternion(), mm=new THREE.Matrix4(), up=new V3(0,1,0), dir=new V3();
+  for(let i=0;i<120;i++){ const yy=R(-0.15,1), a=R(0,6.28), rr=Math.sqrt(1-yy*yy); dir.set(Math.cos(a)*rr,yy,Math.sin(a)*rr);
+    const pos=dir.clone().multiplyScalar(R(0.78,1.0)); pos.y*=0.85;
+    qq.setFromUnitVectors(new V3(0,0,1),dir.clone().lerp(up,0.45).normalize()); tq.setFromAxisAngle(new V3(0,0,1),R(0,6.28)); qq.multiply(tq);
+    const g=leaf.clone(); mm.compose(pos,qq,new V3(1,1,1)); g.applyMatrix4(mm); withColor(g,R(0.78,1.12),R(0.95,1.05)); parts.push(g.index?g.toNonIndexed():g); }
+  const core=new THREE.IcosahedronGeometry(0.8,1); core.scale(1,0.8,1); withColor(core,0.2); parts.push(core);
+  const out=mergeGeometries(parts.map(g=>{ g=g.index?g.toNonIndexed():g; g.deleteAttribute('uv'); g.deleteAttribute('normal'); return g; })); out.computeVertexNormals(); return canopyNormals(out,0.55); })();
+const ajiLeafMat=patchMat(std('#ffffff',{side:THREE.DoubleSide,roughness:.6,vertexColors:true}),{sway:'0.015*transformed.y',snow:[0.5,0.9,0.6],
+  color:`diffuseColor.rgb*=0.85+0.25*vnoise(vW*9.0);`,emissive:'totalEmissiveRadiance+=diffuseColor.rgb*0.1*(1.0-gSnowAmt);'});
+VEG.aji=makeChunks(ajiBushGeo,ajiLeafMat,AJI,{lod:0.7});
 // hydrangea heads: domes of four-petalled florets
-const ajiFMat=std('#ffffff',{roughness:.6}); patchMat(ajiFMat,{snow:[0.3,0.7,1.0],fHead:'vec2 fl(vec3 n){ return vec2(atan(n.z,n.x)*5.0,n.y*5.0); }',
-  color:`vec3 lp=normalize(vW-floor(vW*4.0)/4.0-0.125); vec2 q=vec2(atan(vWN.z,vWN.x)*9.0,acos(clamp(vWN.y,-1.,1.))*9.0); vec2 c=fract(q)-0.5; float a=atan(c.y,c.x); float pet=smoothstep(0.02,-0.02,length(c)-0.36-0.1*cos(a*4.0));
-    diffuseColor.rgb*=mix(0.72,1.05,pet)*(0.93+0.1*hash3(vec3(floor(q),2.0)));`,
-  normal:bumpH('smoothstep(0.4,0.2,length(fract(vec2(atan(vWN.z,vWN.x)*6.0,acos(clamp(vWN.y,-1.,1.))*6.0))-0.5))*0.012',1.0),emissive:'totalEmissiveRadiance+=diffuseColor.rgb*0.08;'});
-VEG.ajiF=makeChunks(new THREE.IcosahedronGeometry(1,2),ajiFMat,AJIF,{shadow:false});
+const ajiFMat=std('#ffffff',{roughness:.6}); patchMat(ajiFMat,{snow:[0.3,0.7,1.0],
+  color:`vec2 q=vec2(atan(vWN.z,vWN.x)*7.0,acos(clamp(vWN.y,-1.,1.))*7.0); vec2 c=fract(q)-0.5; float a=atan(c.y,c.x); float pet=smoothstep(0.03,-0.03,length(c)-0.36-0.1*cos(a*4.0));
+    diffuseColor.rgb*=mix(0.66,1.06,pet)*(0.9+0.16*hash3(vec3(floor(q),2.0)));`,
+  normal:bumpH('smoothstep(0.4,0.2,length(fract(vec2(atan(vWN.z,vWN.x)*7.0,acos(clamp(vWN.y,-1.,1.))*7.0))-0.5))*0.012',1.0),emissive:'totalEmissiveRadiance+=diffuseColor.rgb*0.1;'});
+const ajiHeadGeo=(()=>{ const g=new THREE.IcosahedronGeometry(1,2); const p=g.attributes.position; for(let i=0;i<p.count;i++){ _v.fromBufferAttribute(p,i); const k=1+0.06*Math.sin(_v.x*13+_v.y*7)+0.05*Math.sin(_v.z*11-_v.y*5); p.setXYZ(i,_v.x*k,Math.max(_v.y,-0.35)*k,_v.z*k); } g.computeVertexNormals(); const n=g.attributes.normal; for(let i=0;i<p.count;i++){ _v.fromBufferAttribute(p,i).normalize(); n.setXYZ(i,_v.x,_v.y,_v.z); } return g; })();
+VEG.ajiF=makeChunks(ajiHeadGeo,ajiFMat,AJIF,{shadow:false,lod:0.6});
 VEG.fern=makeChunks(fernGeo,patchMat(std('#ffffff',{side:THREE.DoubleSide,roughness:.75,vertexColors:true}),{sway:'0.02*transformed.y',snow:[0.3,0.8,0.9],emissive:'totalEmissiveRadiance+=diffuseColor.rgb*0.12;'}),FERNS,{shadow:false,lod:0.5});
 makeInst(flareGeo,M.fbark,FLARES);
 const [BR_THICK,BR_THIN]=flushForestBranches();
@@ -1555,6 +1578,7 @@ function showPanel(h,num){
 function goStop(i){
   if(i<0||i>=HS.length) return;
   cur=i; const h=HS[i];
+  if(h.id==='ajisai'&&SEASONS[seasonIdx].key==='spring'){ seasonIdx=1; applySeason(); toast('紫阳花苑：已切换到6月花期，可用右上角“季节”换回'); }
   flyTo(h.view);
   showPanel(h,`第 ${i+1} 站 / 共 ${HS.length} 站`);
   [...dots.children].forEach((b,k)=>{ b.classList.toggle('cur',k===i); b.classList.toggle('done',k<i); });
@@ -1604,8 +1628,12 @@ function applySeason(){
   recolor(VEG.kari,b=>pal(S.kari,b.k)); recolor(VEG.aji,b=>pal(S.aji,b.k)); recolor(VEG.fern,b=>pal(S.fern,b.k));
   recolor(VEG.hill,b=>pal(S.hill,b.k)); recolor(VEG.hillB,b=>pal(S.hillB,b.k).multiplyScalar(0.85));
   recolor(VEG.far,b=>pal(S.hill,b.k).multiplyScalar(0.8)); recolor(VEG.farB,b=>pal(S.hillB,b.k).multiplyScalar(0.75));
-  const AJC=['#4a6ac8','#6a5ac0','#8a6ac8','#c87aa8','#e0e4ec','#6a8ad8','#9a5aa8'];
-  recolor(VEG.ajiF,f=>{ _c.set(AJC[Math.floor(f.k*AJC.length)]); _c.offsetHSL((f.k2-0.5)*0.04,0,(f.k2-0.5)*0.1); return _c; }); setChunkVisible(VEG.ajiF,!!S.flowers);
+  // hydrangea heads by colour drift (blue, violet, pink, white) and season: green buds, full bloom, antique autumn heads, dry winter heads
+  const AJC={spring:[['#b9cf86','#a9c47a'],['#b4c98a','#c2d494'],['#bcd08c','#c8d79a'],['#cfdca8','#d8e2b4']],
+    summer:[['#4c6cc0','#6484d4','#5672c6'],['#6a56c0','#8466cc','#7a4fb0'],['#d27aa8','#e08ab4','#c4669a'],['#eef0f4','#e2e8f2','#f2f2ea']],
+    autumn:[['#5e6a7e','#6e5a6e','#7a8a6a'],['#7a4e64','#8a5a6e','#6a5a70'],['#9a5a5e','#a86a6a','#8a6a50'],['#b4b48a','#a8a070','#c0b890']],
+    winter:[['#8a7a62','#7e705c'],['#86765e','#7a6c58'],['#927e66','#84745c'],['#9a8a70','#8c7e66']]}[S.key];
+  recolor(VEG.ajiF,f=>{ const g=AJC[f.k]; _c.set(g[Math.floor(f.k2*g.length)]); _c.offsetHSL((f.k3-0.5)*0.03,0,(f.k3-0.5)*0.08); return _c; }); setChunkVisible(VEG.ajiF,true);
   U_MOSS.value.set(S.moss); U_FIELD.value.set(S.field); U_LITTER.value.set(S.litter); U_CANOPY.value.set(S.canopy);
   falls.forEach((l,i)=>{ fallMesh.setColorAt(i,_c.set(S.fall[i%S.fall.length])); l.on=i<S.fallN; spawnFall(l,true); }); if(fallMesh.instanceColor) fallMesh.instanceColor.needsUpdate=true;
   snowPts.visible=winter; U.uSnow.value=winter?1:0;
