@@ -145,7 +145,7 @@ const PI = Math.PI;
 
 /* ---------------- renderer / scene ---------------- */
 const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1341,7 +1341,7 @@ renderer.domElement.addEventListener('pointerup',e=>{
   if(h.id==='sozu') triggerSozu();
   goStop(h.idx);
 });
-renderer.domElement.addEventListener('pointermove',e=>{ if(e.buttons) return; renderer.domElement.style.cursor=pick(e)?'pointer':'grab'; });
+let pickT=0; renderer.domElement.addEventListener('pointermove',e=>{ if(e.buttons) return; const n=performance.now(); if(n-pickT<90) return; pickT=n; renderer.domElement.style.cursor=pick(e)?'pointer':'grab'; });
 function pick(e){
   mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1); ray.setFromCamera(mouse,camera);
   const hits=ray.intersectObjects(clickables,true);
@@ -1367,7 +1367,7 @@ function buildComposer(){
   composer.setSize(innerWidth,innerHeight);
 }
 function setQuality(q){
-  quality=q; $('#bQuality').textContent='画质：'+(q==='high'?'高':'标准');
+  quality=q; renderer.shadowMap.needsUpdate=true; $('#bQuality').textContent='画质：'+(q==='high'?'高':'标准');
   if(q==='high'&&!composer) buildComposer();
   const ms=q==='high'?4096:2048; if(sun.shadow.mapSize.x!==ms){ sun.shadow.mapSize.set(ms,ms); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } }
   grassMesh.visible=true;
@@ -1375,8 +1375,36 @@ function setQuality(q){
 $('#bQuality').onclick=()=>setQuality(quality==='high'?'std':'high');
 let fpsAcc=0,fpsN=0,fpsChecked=false;
 let shadowSpan=0;
+/* ---- performance governor: FPS cap (60 while moving, 30 ambient, 15 idle/background), shadow-map caching ---- */
+const PERF={last:0,iv:1000/30,lastInput:performance.now(),timer:0,shadowT:-1,span:-1,sp:new THREE.Vector3(1e9,0,0),reflM:new THREE.Matrix4(),reflN:0};
+const LOW_END=matchMedia('(pointer:coarse)').matches||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
+renderer.shadowMap.autoUpdate=false; renderer.shadowMap.needsUpdate=true;
+function perfPoke(){ PERF.lastInput=performance.now(); if(PERF.timer){ clearTimeout(PERF.timer); PERF.timer=0; perfQueue(); } }
+for(const ev of ['pointerdown','wheel','keydown','touchstart']) addEventListener(ev,perfPoke,{passive:true,capture:true});
+addEventListener('pointermove',e=>{ if(e.buttons) perfPoke(); },{passive:true,capture:true});
+addEventListener('focus',perfPoke);
+function perfInterval(){
+  const since=performance.now()-PERF.lastInput;
+  if(fly||controls.autoRotate||since<1500) return 1000/60;
+  if(!document.hasFocus()||!$('#intro').classList.contains('gone')||(since>45000&&!playing)) return 1000/15;
+  return 1000/30;
+}
+function perfQueue(){ requestAnimationFrame(perfTick); }
+function perfTick(now){
+  const iv=perfInterval(), el=now-PERF.last;
+  if(el<iv-2){ const wait=iv-el; if(wait>24) PERF.timer=setTimeout(()=>{ PERF.timer=0; perfQueue(); },wait-14); else perfQueue(); return; }
+  PERF.last=el>iv*2?now:now-(el%iv); PERF.iv=iv; PERF.n=(PERF.n||0)+1; frame();
+}
+// shadows are re-rendered only when the sun frustum moves, plus a few times a second for moving casters
+function perfShadows(t){
+  if(t-PERF.shadowT>0.2||PERF.span!==shadowSpan||!PERF.sp.equals(sun.position)){ renderer.shadowMap.needsUpdate=true; PERF.shadowT=t; PERF.span=shadowSpan; PERF.sp.copy(sun.position); }
+}
+function setLbl(el,show,x,y,o){ const c=el._c||(el._c={});
+  if(!show){ if(c.s!==0){ el.style.display='none'; c.s=0; } return; }
+  if(c.s!==1){ el.style.display='flex'; c.s=1; } x=Math.round(x); y=Math.round(y);
+  if(c.x!==x){ el.style.left=x+'px'; c.x=x; } if(c.y!==y){ el.style.top=y+'px'; c.y=y; } if(c.o!==o){ el.style.opacity=o; c.o=o; } }
 function frame(){
-  const dt=Math.min(0.05,clock.getDelta()); const t=clock.elapsedTime; U.uTime.value=t;
+  const dt=Math.min(0.1,clock.getDelta()); const t=clock.elapsedTime; U.uTime.value=t;
   // flight
   if(fly){
     const k=Math.min(1,(performance.now()-fly.start)/fly.dur), e=ease(k);
@@ -1414,25 +1442,25 @@ function frame(){
     const s=Math.max(0.6,Math.min(4,d*0.035)); g.scale.setScalar(s); g.visible=d>2.5;
     const el=h.label; tmp.copy(g.position); tmp.y+=0.6*s; tmp.project(camera);
     const aerial=camera.position.y-H(camera.position.x,camera.position.z)>18;
-    if(!labelsOn||tmp.z>1||d<2.5||d>170||(!aerial&&d>34&&!(cur>=0&&HS[cur]===h))){ el.style.display='none'; return; }
-    el.style.display='flex'; el.style.left=((tmp.x+1)/2*innerWidth)+'px'; el.style.top=((1-tmp.y)/2*innerHeight)+'px';
-    el.style.opacity=d>110?0.55:1;
+    if(!labelsOn||tmp.z>1||d<2.5||d>170||(!aerial&&d>34&&!(cur>=0&&HS[cur]===h))){ setLbl(el,false); return; }
+    setLbl(el,true,(tmp.x+1)/2*innerWidth,(1-tmp.y)/2*innerHeight,d>110?0.55:1);
   });
+  perfShadows(t);
   if(quality==='high'&&composer) composer.render(); else renderer.render(scene,camera);
-  if(!fpsChecked&&!window.__noAutoQuality&&$('#intro').classList.contains('gone')){ fpsAcc+=dt; fpsN++; if(fpsAcc>5){ fpsChecked=true; if(fpsN/fpsAcc<24&&quality==='high') setQuality('std'); } }
-  requestAnimationFrame(frame);
+  if(!fpsChecked&&!window.__noAutoQuality&&$('#intro').classList.contains('gone')){ if(PERF.iv<34){ fpsAcc+=dt; fpsN++; } if(fpsAcc>5){ fpsChecked=true; if(fpsN/fpsAcc<24&&quality==='high') setQuality('std'); } }
+  perfQueue();
 }
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); if(composer) composer.setSize(innerWidth,innerHeight); });
 
 for(const k of ['fusuma','tatami','tatamiEdge','silk','plaster']) M[k].envMapIntensity=0.35;
 scene.traverse(o=>{ const m=o.material; if(m&&m.isMeshStandardMaterial&&m.envMapIntensity===1) m.envMapIntensity=0.8; });
-setQuality('high');
+setQuality(LOW_END?'std':'high');
 applySeason(); applyTime();
 frame();
 $('#loading').textContent='场景已就绪';
 $('#iTour').onclick=()=>{ $('#intro').classList.add('gone'); goStop(0); };
 $('#iFree').onclick=()=>{ $('#intro').classList.add('gone'); showOverview(); };
-window.__shisendo={HS,goStop,showOverview,scene,renderer,setQuality};
+window.__shisendo={perf:()=>({fps:Math.round(1000/PERF.iv),quality,frames:PERF.n|0}),HS,goStop,showOverview,scene,renderer,setQuality};
 </script>
 <script>
 // fallback message if the module (Three.js CDN) fails to load
