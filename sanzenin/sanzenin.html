@@ -44,6 +44,7 @@ button{cursor:pointer}
 .act:hover{background:var(--red);color:#fff}
 .quote{margin-top:8px;padding:8px 10px;border-left:3px solid var(--gold);background:rgba(200,150,46,.08);font-size:14px}
 #pGo{margin-top:12px;border:0;background:var(--ink);color:#fff;border-radius:8px;padding:7px 14px;font-size:13px}
+#pVoice{margin:12px 0 0 6px;border:1px solid var(--ink);background:none;color:var(--ink);border-radius:8px;padding:6px 13px;font-size:13px}
 #tour{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;z-index:6;
   background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:6px 10px;box-shadow:0 4px 18px rgba(0,0,0,.25);max-width:calc(100% - 20px)}
 #tour .nav{border:0;background:var(--ink);color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;white-space:nowrap}
@@ -95,6 +96,7 @@ button{cursor:pointer}
   <button class="tb on" id="bLabels">标签</button>
   <button class="tb" id="bSeason">季节：新绿</button>
   <button class="tb" id="bTime">时间：白昼</button>
+  <button class="tb on" id="bVoice">讲解：中文</button>
   <button class="tb" id="bSound">声音：关</button>
   <button class="tb" id="bQuality">画质：高</button>
 </div>
@@ -105,7 +107,7 @@ button{cursor:pointer}
   <div id="pJp"></div>
   <div id="pBody"></div>
   <div id="pExtra"></div>
-  <button id="pGo">前往此处</button>
+  <button id="pGo">前往此处</button><button id="pVoice" style="display:none">▶ 播放讲解</button>
 </aside>
 <nav id="tour">
   <button class="nav" id="tPrev">‹ 上一处</button>
@@ -1573,11 +1575,13 @@ function showPanel(h,num){
   (h.acts||[]).forEach(([lbl,fn])=>{ const b=document.createElement('button'); b.className='act'; b.textContent=lbl; b.onclick=fn; ex.appendChild(b); });
   $('#pGo').style.display=h.view?'':'none';
   $('#pGo').onclick=()=>{ if(h===OVERVIEW) showOverview(); else goStop(h.idx); };
+  narrPanelH=h; narrUI();
   $('#panel').classList.remove('hidden');
 }
 function goStop(i){
   if(i<0||i>=HS.length) return;
   cur=i; const h=HS[i];
+  narrate(h.id);
   if(h.id==='ajisai'&&SEASONS[seasonIdx].key==='spring'){ seasonIdx=1; applySeason(); toast('紫阳花苑：已切换到6月花期，可用右上角“季节”换回'); }
   flyTo(h.view);
   showPanel(h,`第 ${i+1} 站 / 共 ${HS.length} 站`);
@@ -1588,6 +1592,7 @@ function goStop(i){
   inOverview=false;
 }
 function showOverview(){
+  narrStop();
   cur=-1; flyTo(OVERVIEW.view); showPanel(OVERVIEW,'总览'); $('#stopName').textContent='总览';
   [...dots.children].forEach(b=>b.classList.remove('cur'));
   routeMesh.visible=true; inOverview=true;
@@ -1595,12 +1600,40 @@ function showOverview(){
 function enterOjo(){ const {x,z}=HALLS.ojo, f=OJO.f; flyTo({p:[x,f+1.25,z+3.7],t:[x,f+2.9,z-2.0]}); toast('抬头看：中间隆起的船底天井'); }
 function toggleRestore(){ const on=restoreTo<0.5; restoreTo=on?1:0; toast(on?'按红外线调查复原的极彩色：天女、宝相华与菩萨':'恢复为现在褪色的样子'); if(camera.position.distanceTo(new V3(HALLS.ojo.x,OJO.f,HALLS.ojo.z))>6) enterOjo(); }
 let restoreTo=0;
+/* ---------------- narration: pre-generated Azure TTS (zh/en/ja), one shared <audio>, loaded on demand ---------------- */
+const NARR_LANGS=[['off','讲解：关'],['zh','讲解：中文'],['en','讲解：English'],['ja','讲解：日本語']];
+let narrLang='zh'; try{ const v=localStorage.getItem('kyotoNarrLang'); if(NARR_LANGS.some(l=>l[0]===v)) narrLang=v; }catch(e){}
+const narrAu=new Audio(); narrAu.preload='none';
+let narrId=null, narrPanelH=null;
+function narrUI(){
+  $('#bVoice').textContent=NARR_LANGS.find(l=>l[0]===narrLang)[1]; $('#bVoice').classList.toggle('on',narrLang!=='off');
+  const b=$('#pVoice'), id=narrPanelH&&HS.includes(narrPanelH)?narrPanelH.id:null;
+  b.style.display=narrLang!=='off'&&id?'':'none';
+  b.textContent=narrId===id&&!narrAu.paused?'❚❚ 暂停讲解':'▶ 播放讲解';
+}
+function narrate(id){
+  narrAu.pause(); narrId=null;
+  if(narrLang!=='off'&&id){ narrId=id; narrAu.src=`audio/${id}.${narrLang}.mp3`; narrAu.play().catch(()=>{ narrId=null; narrUI(); }); }
+  narrUI();
+}
+function narrStop(){ narrAu.pause(); narrId=null; narrUI(); }
+const narrBusy=()=>narrId!==null&&!narrAu.paused;
+narrAu.onplay=narrAu.onpause=narrUI;
+narrAu.onended=()=>{ narrId=null; narrUI(); if(playing&&!fly) scheduleNext(1500); };
+narrAu.onerror=()=>{ if(!narrAu.src) return; narrId=null; narrUI(); if(playing&&!fly) scheduleNext(); };
+$('#bVoice').onclick=()=>{
+  narrLang=NARR_LANGS[(NARR_LANGS.findIndex(l=>l[0]===narrLang)+1)%NARR_LANGS.length][0];
+  try{ localStorage.setItem('kyotoNarrLang',narrLang); }catch(e){}
+  if(narrLang==='off') narrStop(); else if(cur>=0) narrate(HS[cur].id); else narrUI();
+};
+$('#pVoice').onclick=()=>{ const id=narrPanelH&&narrPanelH.id; if(!id) return; if(narrId===id) narrAu.paused?narrAu.play().catch(()=>{}):narrAu.pause(); else narrate(id); };
+narrUI();
 function setPlaying(v){ playing=v; $('#tPlay').classList.toggle('on',v); $('#tPlay').textContent=v?'❚❚ 暂停':'▶ 自动'; clearTimeout(playTimer); if(v&&!fly) scheduleNext(); if(v&&cur<0) goStop(0); }
-function scheduleNext(){ clearTimeout(playTimer); playTimer=setTimeout(()=>{ if(!playing) return; if(cur<HS.length-1) goStop(cur+1); else setPlaying(false); },9000); }
+function scheduleNext(d){ clearTimeout(playTimer); playTimer=setTimeout(()=>{ if(!playing||narrBusy()) return; if(cur<HS.length-1) goStop(cur+1); else setPlaying(false); },d??9000); }
 $('#tPrev').onclick=()=>goStop(Math.max(0,cur-1));
 $('#tNext').onclick=()=>goStop(Math.min(HS.length-1,cur+1));
 $('#tPlay').onclick=()=>setPlaying(!playing);
-$('#pClose').onclick=()=>$('#panel').classList.add('hidden');
+$('#pClose').onclick=()=>{ $('#panel').classList.add('hidden'); narrStop(); };
 $('#bOverview').onclick=showOverview;
 $('#bRoute').onclick=e=>{ e.target.classList.toggle('on'); routeMesh.visible=inOverview||e.target.classList.contains('on'); };
 let labelsOn=true; $('#bLabels').onclick=e=>{ labelsOn=!labelsOn; e.target.classList.toggle('on',labelsOn); markerGroup.visible=labelsOn; };
