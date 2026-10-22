@@ -1216,7 +1216,7 @@ function showPanel(h,num){
   }
   $('#pGo').style.display=h.view?'':'none';
   $('#pGo').onclick=()=>{ if(h===OVERVIEW) showOverview(); else goStop(h.idx); };
-  narrPanelH=h; narrUI();
+  narrPanelH=h; if(HS.includes(h)&&narrLast!==h.id) narrate(h.id); else narrUI();
   $('#panel').classList.remove('hidden');
 }
 function fillPoet(i){ const q=$('#poetInfo'); if(!q) return; const [n,d,l]=POETS[i];
@@ -1258,23 +1258,25 @@ function showOverview(){
 const NARR_LANGS=[['off','讲解：关'],['zh','讲解：中文'],['en','讲解：English'],['ja','讲解：日本語']];
 let narrLang='zh'; try{ const v=localStorage.getItem('kyotoNarrLang'); if(NARR_LANGS.some(l=>l[0]===v)) narrLang=v; }catch(e){}
 const narrAu=new Audio(); narrAu.preload='none';
-let narrId=null, narrPanelH=null;
+let narrId=null, narrPanelH=null, narrLast=null, narrErr=false;
 function narrUI(){
   $('#bVoice').textContent=NARR_LANGS.find(l=>l[0]===narrLang)[1]; $('#bVoice').classList.toggle('on',narrLang!=='off');
   const b=$('#pVoice'), id=narrPanelH&&HS.includes(narrPanelH)?narrPanelH.id:null;
   b.style.display=narrLang!=='off'&&id?'':'none';
-  b.textContent=narrId===id&&!narrAu.paused?'❚❚ 暂停讲解':'▶ 播放讲解';
+  b.textContent=narrErr&&narrLast===id?'讲解加载失败，点此重试':narrId===id&&!narrAu.paused?'❚❚ 暂停讲解':'▶ 播放讲解';
 }
 function narrate(id){
-  narrAu.pause(); narrId=null;
+  narrAu.pause(); narrId=null; narrLast=id; narrErr=false; narrAu.muted=false;
   if(narrLang!=='off'&&id){ narrId=id; narrAu.src=`audio/${id}.${narrLang}.mp3`; narrAu.play().catch(()=>{ narrId=null; narrUI(); }); }
   narrUI();
 }
-function narrStop(){ narrAu.pause(); narrId=null; narrUI(); }
+function narrStop(){ narrAu.pause(); narrId=null; narrLast=null; narrUI(); }
+// iOS/Safari only let a media element play after it has been started inside a tap: start it muted on the first tap so later stops can play
+addEventListener('pointerdown',()=>{ if(narrAu.src) return; narrAu.muted=true; narrAu.src=`audio/${HS[0].id}.zh.mp3`; narrAu.play().then(()=>{ if(narrId===null){ narrAu.pause(); } narrAu.muted=false; },()=>{ narrAu.muted=false; }); },{once:true,capture:true});
 const narrBusy=()=>narrId!==null&&!narrAu.paused;
 narrAu.onplay=narrAu.onpause=narrUI;
 narrAu.onended=()=>{ narrId=null; narrUI(); if(playing&&!fly) scheduleNext(1500); };
-narrAu.onerror=()=>{ if(!narrAu.src) return; narrId=null; narrUI(); if(playing&&!fly) scheduleNext(); };
+narrAu.onerror=()=>{ if(!narrAu.src||narrId===null) return; narrId=null; narrErr=true; narrUI(); if(playing&&!fly) scheduleNext(); };
 $('#bVoice').onclick=()=>{
   narrLang=NARR_LANGS[(NARR_LANGS.findIndex(l=>l[0]===narrLang)+1)%NARR_LANGS.length][0];
   try{ localStorage.setItem('kyotoNarrLang',narrLang); }catch(e){}
